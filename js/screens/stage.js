@@ -8,6 +8,8 @@ import { getAppModule } from "../apps/registry.js";
 import { createPhoneFrame } from "../ui/phone.js";
 import { createExplodedStack } from "../ui/exploded.js";
 import { createPanel } from "../ui/panel.js";
+import { createShareButton } from "../ui/share.js";
+import { emit } from "../events.js";
 
 const BACK_ARROW_SVG = `
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -45,6 +47,9 @@ export function mount(container, { appId = "Foodzy" }) {
 
   const headerRight = document.createElement("div");
   headerRight.className = "stage-header-right";
+
+  const shareBtn = createShareButton({ className: "stage-share-btn" });
+  headerRight.appendChild(shareBtn);
 
   const themeBtn = document.createElement("button");
   themeBtn.type = "button";
@@ -100,6 +105,7 @@ export function mount(container, { appId = "Foodzy" }) {
     if (!explodedStack.isExploded) {
       explodedStack.explode();
       explodeBtn.textContent = t("stage.together");
+      emit("explode_open", { app: appId });
     } else {
       explodedStack.collapse();
       explodeBtn.textContent = t("stage.explode");
@@ -140,6 +146,7 @@ export function mount(container, { appId = "Foodzy" }) {
   requestAnimationFrame(handleResize);
 
   container.replaceChildren(root);
+  emit("app_open", { app: appId });
 
   return {
     unmount() {

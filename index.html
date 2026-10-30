@@ -8,6 +8,26 @@
   <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FFFFFF">
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0F172A">
   <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://wrench-wise.com/explorer/">
+  <meta property="og:title" content="Explorer">
+  <meta property="og:description" content="Use a real-looking app, then split it open and watch your order travel through every layer.">
+  <meta property="og:image" content="og-image.png">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://wrench-wise.com/explorer/">
+  <meta name="twitter:title" content="Explorer">
+  <meta name="twitter:description" content="Use a real-looking app, then split it open and watch your order travel through every layer.">
+  <meta name="twitter:image" content="og-image.png">
+
+  <link rel="modulepreload" href="js/main.js">
+  <link rel="modulepreload" href="js/screens/home.js">
+  <link rel="modulepreload" href="js/content.js">
+  <link rel="modulepreload" href="js/copy.js">
   <link rel="stylesheet" href="styles/tokens.css">
   <link rel="stylesheet" href="styles/base.css">
   <link rel="stylesheet" href="styles/site.css">
@@ -24,24 +44,13 @@
         <img src="assets/logo.png" alt="Wrench Wise" class="site-logo">
         <span class="site-logo-text">Explorer</span>
       </a>
-      <button type="button" id="theme-toggle" class="theme-toggle-btn" aria-label="Switch theme">
+      <button type="button" id="theme-toggle" class="theme-toggle-btn">
         <span id="theme-label">Switch to dark theme</span>
       </button>
     </div>
   </header>
 
-  <main class="site-main" id="app-root">
-    <div class="shell-preview-card">
-      <span class="shell-preview-eyebrow">Phase 0 Shell</span>
-      <h1 class="shell-preview-title">Explorer</h1>
-      <p class="shell-preview-desc">
-        Every app you use has 5 hidden layers. Use a real-looking app, then split it open and watch your order travel through every layer.
-      </p>
-      <p style="font-size: 0.875rem; color: var(--muted);">
-        Setup and checks complete. The shell is ready for Phase 1.
-      </p>
-    </div>
-  </main>
+  <main class="site-main" id="app-root"></main>
 
   <footer class="site-footer">
     <div class="site-footer-inner">

@@ -2,11 +2,17 @@
 // Uses standard DOM text nodes and timestamp formatting.
 // Used by ui/exploded.js.
 
+let demoLogSeconds = 5;
+
 /**
  * Formats current timestamp as [hh:mm:ss].
  * @returns {string}
  */
 function getTimestamp() {
+  if (typeof window !== "undefined" && window.__demoMode) {
+    const s = String(demoLogSeconds++).padStart(2, "0");
+    return `[10:42:${s}]`;
+  }
   const d = new Date();
   const h = String(d.getHours()).padStart(2, "0");
   const m = String(d.getMinutes()).padStart(2, "0");

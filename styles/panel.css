@@ -513,6 +513,42 @@
   text-align: center;
 }
 
+.btn-share {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all var(--dur-150);
+}
+
+.btn-share:hover {
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  border-color: var(--brand);
+}
+
+.panel-share-btn {
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.panel-share-btn-large {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  background: var(--surface);
+  border-color: var(--brand);
+  box-shadow: var(--shadow-md);
+}
+
 /* Screen Blocker Overlay while flow is playing */
 .stage-screen-blocker {
   position: absolute;

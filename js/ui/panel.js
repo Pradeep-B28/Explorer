@@ -10,7 +10,7 @@ import { createPlayer } from "../player.js";
 import { renderCodeView } from "./codeview.js";
 import { renderCtaCard } from "./cta.js";
 import { showToast } from "./toast.js";
-import { on } from "../events.js";
+import { on, emit } from "../events.js";
 
 /**
  * Creates and mounts the Panel controller.
@@ -49,6 +49,7 @@ export function createPanel(container, options) {
   let codeViewHandle = null;
   let currentSpeed = CONFIG.defaultSpeed || 1;
   let screenBlocker = null;
+  let pendingTriggerHow = "tap";
 
   function setScreenBlocker(active) {
     const screen = document.getElementById("phone-screen");
@@ -118,6 +119,7 @@ export function createPanel(container, options) {
         doitBtn.className = "panel-doit-btn";
         doitBtn.textContent = t("panel.doIt");
         doitBtn.addEventListener("click", () => {
+          pendingTriggerHow = "do_it";
           if (!explodedStack.isExploded) explodedStack.explode();
           if (typeof onDoItForMe === "function") onDoItForMe(j.id);
         });
@@ -133,6 +135,10 @@ export function createPanel(container, options) {
     const { journeyId, values, commit } = requestData;
     const journey = journeys.find(j => j.id === journeyId);
     if (!journey) return;
+
+    const how = requestData.how || pendingTriggerHow || "tap";
+    pendingTriggerHow = "tap";
+    emit("flow_start", { flow: journeyId, how });
 
     if (!explodedStack.isExploded) explodedStack.explode();
     if (activePlayer) activePlayer.close();
@@ -150,6 +156,7 @@ export function createPanel(container, options) {
         setScreenBlocker(false);
         markFlowWatched(j.id);
         explodedStack.setActiveLayer(-1);
+        emit("flow_complete", { flow: j.id });
         renderCtaCard(panelBody, { journey: j, journeys, onTryAnother: renderFlowList });
       }
     });

@@ -155,11 +155,19 @@ export function loadDemoCart() {
   return demo;
 }
 
+export function resetOrderState() {
+  orderCounter = 1;
+  placedOrders.length = 0;
+  cart = emptyCart();
+  navigate("home");
+}
+
 if (typeof window !== "undefined") {
   window.__foodzyState = {
     getCart,
     setCart,
     loadDemoCart,
+    resetOrderState,
     addCartItem,
     removeCartItem,
     getScreen,
