@@ -1,12 +1,12 @@
-// App stage screen rendering the header, phone container, and panel area.
-// Uses js/ui/phone.js, js/apps/registry.js, js/content.js, and js/copy.js.
+// App stage screen rendering the header, 3D exploded stack, phone frame, and panel.
+// Uses ui/phone.js, ui/exploded.js, apps/registry.js, content.js, and copy.js.
 // Used by main.js and router.
 
 import { getApp, getLayers } from "../content.js";
 import { t } from "../copy.js";
 import { getAppModule } from "../apps/registry.js";
 import { createPhoneFrame } from "../ui/phone.js";
-import { showToast } from "../ui/toast.js";
+import { createExplodedStack } from "../ui/exploded.js";
 
 const BACK_ARROW_SVG = `
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -69,12 +69,16 @@ export function mount(container, { appId = "Foodzy" }) {
   const body = document.createElement("div");
   body.className = "stage-body";
 
-  // Left Column: Stage area holding the phone
+  // Left Column: Stage area holding the 3D Exploded Stack
   const stageCol = document.createElement("div");
   stageCol.className = "stage-col";
 
   const phoneObj = createPhoneFrame();
-  stageCol.appendChild(phoneObj.element);
+  const explodedStack = createExplodedStack(phoneObj, phoneObj.screenElement);
+  stageCol.appendChild(explodedStack.element);
+
+  // Expose on window for testing
+  window.__explodedStack = explodedStack;
 
   // Mount the app into phone screen
   let appInstance = null;
@@ -90,9 +94,21 @@ export function mount(container, { appId = "Foodzy" }) {
   explodeBtn.type = "button";
   explodeBtn.className = "stage-explode-btn";
   explodeBtn.textContent = t("stage.explode");
+
   explodeBtn.addEventListener("click", () => {
-    showToast("Exploded 3D view will be activated in Phase 3.", phoneObj.screenElement);
+    if (!explodedStack.isExploded) {
+      explodedStack.explode();
+      explodeBtn.textContent = t("stage.together");
+      pTitle.textContent = t("stage.intro.title");
+      pBody.textContent = t("stage.intro.body");
+    } else {
+      explodedStack.collapse();
+      explodeBtn.textContent = t("stage.explode");
+      pTitle.textContent = t("panel.intro.title");
+      pBody.textContent = t("panel.intro.body");
+    }
   });
+
   explodeWrap.appendChild(explodeBtn);
   stageCol.appendChild(explodeWrap);
 
@@ -119,9 +135,15 @@ export function mount(container, { appId = "Foodzy" }) {
   // Layers list chips
   const layersList = document.createElement("div");
   layersList.className = "stage-layers-list";
-  getLayers().forEach((l) => {
+  getLayers().forEach((l, idx) => {
     const chip = document.createElement("div");
     chip.className = `stage-layer-chip layer-${l.id}`;
+    chip.style.cursor = "pointer";
+    chip.addEventListener("click", () => {
+      if (explodedStack.isExploded) {
+        explodedStack.setActiveLayer(idx);
+      }
+    });
 
     const dot = document.createElement("span");
     dot.className = "stage-layer-dot";
@@ -145,11 +167,12 @@ export function mount(container, { appId = "Foodzy" }) {
   body.appendChild(panelCol);
   root.appendChild(body);
 
-  // Responsive Phone Scaling
+  // Responsive Phone & Exploded Scaling
   function handleResize() {
     const stageWidth = stageCol.clientWidth || window.innerWidth;
     const stageHeight = Math.max(window.innerHeight - 140, 500);
     phoneObj.updateScale(stageWidth, stageHeight);
+    explodedStack.updateScale(stageWidth, stageHeight);
   }
 
   window.addEventListener("resize", handleResize);
@@ -160,6 +183,7 @@ export function mount(container, { appId = "Foodzy" }) {
   return {
     unmount() {
       window.removeEventListener("resize", handleResize);
+      delete window.__explodedStack;
       if (appInstance && typeof appInstance.unmount === "function") {
         appInstance.unmount();
       }

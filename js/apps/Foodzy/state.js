@@ -148,3 +148,16 @@ export function getLastOrder() {
 export function getPlacedOrders() {
   return placedOrders;
 }
+
+if (typeof window !== "undefined") {
+  window.__foodzyState = {
+    getCart,
+    setCart,
+    addCartItem,
+    removeCartItem,
+    getScreen,
+    navigate,
+    clearCart,
+    getLastOrder
+  };
+}

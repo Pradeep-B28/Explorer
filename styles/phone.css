@@ -162,3 +162,23 @@
   background: var(--Foodzy);
   color: #FFFFFF;
 }
+
+/* Exploded view phone shell adjustments */
+.phone-frame.exploded-mode {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 0 !important;
+  width: 360px !important;
+  height: 760px !important;
+}
+
+.phone-frame.exploded-mode .phone-dynamic-island,
+.phone-frame.exploded-mode .phone-status-bar {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.phone-frame.exploded-mode .phone-screen {
+  border-radius: 24px;
+}
