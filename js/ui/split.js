@@ -4,9 +4,10 @@
 
 import { LAYERS, getAppContent } from "../content.js";
 import { t } from "../copy.js";
-import { rowGeometry, flatPhoneScale } from "../engine/layout.js";
+import { rowGeometry, flatPhoneScale, layoutFor } from "../engine/layout.js";
 import { prefersReducedMotion } from "../motion.js";
 import { ICONS, getIconSvg } from "./icons.js";
+import { createPhoneView } from "./phone-view.js";
 import { createStylingLayer } from "./layers/styling.js";
 import { createLogicLayer } from "./layers/logic.js";
 import { createServerLayer } from "./layers/server.js";
@@ -372,6 +373,42 @@ export function createSplitView(options) {
   splitContainer.appendChild(dock);
   root.appendChild(splitContainer);
 
+  // Phone view instantiation (UPGRADE_BRIEF.md Section 9)
+  const phoneView = createPhoneView({
+    phoneObj,
+    layerArts,
+    appId,
+    onSplit: () => split(),
+    onDoItForMe: (journeyId) => {
+      if (typeof onDoItForMe === "function") {
+        onDoItForMe(journeyId);
+      }
+    },
+    onTryItYourself: (journey) => {
+      startTryItYourself(journey);
+    },
+    onPrev: () => {
+      if (activePlayer && !activePlayer.isEnded) activePlayer.prev();
+    },
+    onPlayPause: () => {
+      if (activePlayer && !activePlayer.isEnded) {
+        if (activePlayer.isPlaying) activePlayer.pause();
+        else activePlayer.play();
+        phoneView.setPlayState(activePlayer.isPlaying);
+      }
+    },
+    onNext: () => {
+      if (activePlayer && !activePlayer.isEnded) activePlayer.next();
+    },
+    onSpeedChange: (speed) => {
+      currentSpeed = speed;
+      if (activePlayer) activePlayer.setSpeed(speed);
+      updateSpeedControl(speed);
+    }
+  });
+
+  root.appendChild(phoneView.element);
+
   // ---------------------------------------------------------------- 3. Geometry & Layout
   function applyGeometry(geo) {
     currentGeo = geo;
@@ -468,6 +505,14 @@ export function createSplitView(options) {
     if (isSplit) return;
     isSplit = true;
     if (typeof window !== "undefined") window.__isExplaining = true;
+
+    if (layoutFor(window.innerWidth, window.innerHeight) === "phone") {
+      flatContainer.style.display = "none";
+      splitContainer.style.display = "none";
+      phoneView.element.style.display = "flex";
+      phoneView.playSplitAnimation();
+      return;
+    }
 
     const reduced = prefersReducedMotion();
 
@@ -578,6 +623,11 @@ export function createSplitView(options) {
     isSplit = false;
     if (typeof window !== "undefined") window.__isExplaining = false;
     setActiveCard(-1);
+
+    if (layoutFor(window.innerWidth, window.innerHeight) === "phone") {
+      phoneView.assemble();
+      return;
+    }
 
     const reduced = prefersReducedMotion();
     if (reduced) {
@@ -1334,10 +1384,15 @@ export function createSplitView(options) {
 
   // ---------------------------------------------------------------- 8. TRY IT YOURSELF (SECTION 6G)
   function startTryItYourself(journeyId) {
-    const j = journeys.find((item) => item.id === journeyId);
+    const j = typeof journeyId === "object" ? journeyId : journeys.find((item) => item.id === journeyId);
     if (!j) return;
 
     if (!isSplit) split();
+
+    if (layoutFor(window.innerWidth, window.innerHeight) === "phone") {
+      phoneView.startTryItYourself(j);
+      return;
+    }
 
     isTryingYourself = true;
     cardRow.classList.add("dimmed");
@@ -1382,6 +1437,10 @@ export function createSplitView(options) {
   }
 
   function cancelTryItYourself() {
+    if (layoutFor(window.innerWidth, window.innerHeight) === "phone") {
+      phoneView.cancelTryItYourself();
+      return;
+    }
     if (!isTryingYourself) return;
     isTryingYourself = false;
 
@@ -1437,17 +1496,22 @@ export function createSplitView(options) {
         const destIndex = layerIndex(LAYERS, step.layer);
         const fromIndex = step.from !== null && step.from !== undefined ? step.from : destIndex;
 
-        // Travel packet on bus
-        travelPacket(
-          fromIndex,
-          destIndex,
-          step.packet?.label || "step",
-          step.packet?.data || {},
-          step.travel,
-          () => {
-            setActiveCard(destIndex);
-          }
-        );
+        const isPhone = layoutFor(window.innerWidth, window.innerHeight) === "phone";
+        if (isPhone) {
+          phoneView.renderStep(step, journey, index + 1, activePlayer.steps.length, currentSpeed);
+        } else {
+          // Travel packet on bus
+          travelPacket(
+            fromIndex,
+            destIndex,
+            step.packet?.label || "step",
+            step.packet?.data || {},
+            step.travel,
+            () => {
+              setActiveCard(destIndex);
+            }
+          );
+        }
 
         // Update layer card contents
         if (step.layer === "styling" && layerArts.styling) {
@@ -1473,7 +1537,11 @@ export function createSplitView(options) {
         markFlowWatched(j.id);
         setActiveCard(-1);
         emit("flow_complete", { flow: j.id });
-        setDockMode("flowEnd");
+        if (layoutFor(window.innerWidth, window.innerHeight) === "phone") {
+          phoneView.showFlowEnd(j);
+        } else {
+          setDockMode("flowEnd");
+        }
       }
     });
 
@@ -1500,6 +1568,7 @@ export function createSplitView(options) {
         e.preventDefault();
         if (activePlayer.isPlaying) activePlayer.pause();
         else activePlayer.play();
+        phoneView.setPlayState(activePlayer.isPlaying);
       }
     } else if (e.key === "ArrowLeft") {
       if (activePlayer && !activePlayer.isEnded) {
@@ -1521,8 +1590,46 @@ export function createSplitView(options) {
     startFlow(req.journeyId, req.values, req.commit);
   });
 
+  function updateLayoutGeometry(w, h) {
+    const layout = layoutFor(w, h);
+    if (layout === "phone") {
+      flatContainer.style.display = "none";
+      splitContainer.style.display = "none";
+      phoneView.element.style.display = "flex";
+      phoneView.updateGeometry(w, h);
+    } else {
+      phoneView.element.style.display = "none";
+      if (isSplit) {
+        flatContainer.style.display = "none";
+        splitContainer.style.display = "flex";
+        if (cards[0] && !cards[0].contains(phoneObj.frameElement)) {
+          cards[0].querySelector(".screen-phone-container")?.appendChild(phoneObj.frameElement);
+        }
+        if (cards[1] && layerArts?.styling?.element && !cards[1].contains(layerArts.styling.element)) {
+          cards[1].querySelector(".card-body")?.appendChild(layerArts.styling.element);
+        }
+        if (cards[2] && layerArts?.logic?.element && !cards[2].contains(layerArts.logic.element)) {
+          cards[2].querySelector(".card-body")?.appendChild(layerArts.logic.element);
+        }
+        if (cards[3] && layerArts?.server?.element && !cards[3].contains(layerArts.server.element)) {
+          cards[3].querySelector(".card-body")?.appendChild(layerArts.server.element);
+        }
+        if (cards[4] && layerArts?.database?.element && !cards[4].contains(layerArts.database.element)) {
+          cards[4].querySelector(".card-body")?.appendChild(layerArts.database.element);
+        }
+      } else {
+        splitContainer.style.display = "none";
+        flatContainer.style.display = "flex";
+        if (!flatPhoneWrap.contains(phoneObj.frameElement)) {
+          flatPhoneWrap.appendChild(phoneObj.frameElement);
+        }
+      }
+      applyGeometry(rowGeometry(w, h));
+    }
+  }
+
   // ---------------------------------------------------------------- Initial setup
-  applyGeometry(currentGeo);
+  updateLayoutGeometry(window.innerWidth, window.innerHeight);
   setDockMode("flowList");
 
   return {
@@ -1537,15 +1644,17 @@ export function createSplitView(options) {
     setDockMode,
     get dockMode() { return dockMode; },
     get activePlayer() { return activePlayer; },
-    updateGeometry: (w, h) => applyGeometry(rowGeometry(w, h)),
+    updateGeometry: (w, h) => updateLayoutGeometry(w, h),
     layerArts,
     cards,
+    phoneView,
     unmount() {
       if (typeof window !== "undefined") delete window.__isExplaining;
       window.removeEventListener("keydown", handleKeyDown);
       unsubRequest();
       if (activePlayer) activePlayer.close();
       if (activeTypingCancel) activeTypingCancel();
+      phoneView.element.remove();
       root.remove();
     }
   };

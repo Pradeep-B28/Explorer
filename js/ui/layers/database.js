@@ -223,6 +223,7 @@ export function createDatabaseLayer(container) {
   container.replaceChildren(root);
 
   return {
+    element: root,
     execute,
     reset,
     switchTab

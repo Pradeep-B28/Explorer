@@ -161,6 +161,7 @@ export function createStylingLayer(container) {
   requestAnimationFrame(() => redraw());
 
   return {
+    element: root,
     redraw,
     highlight
   };

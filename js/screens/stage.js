@@ -102,6 +102,10 @@ export function mount(container, { appId = "foodzy" }) {
     }
   });
 
+  if (typeof window !== "undefined") {
+    window.__stageSplitView = splitView;
+  }
+
   root.appendChild(splitView.element);
 
   // 3. Responsive resize handler
@@ -117,6 +121,9 @@ export function mount(container, { appId = "foodzy" }) {
 
   return {
     unmount() {
+      if (typeof window !== "undefined") {
+        delete window.__stageSplitView;
+      }
       window.removeEventListener("resize", handleResize);
       if (splitView && typeof splitView.unmount === "function") {
         splitView.unmount();

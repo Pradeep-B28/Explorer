@@ -175,6 +175,7 @@ export function createServerLayer(container) {
   container.replaceChildren(root);
 
   return {
+    element: root,
     addLog,
     highlightRoute,
     reset

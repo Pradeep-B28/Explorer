@@ -166,6 +166,7 @@ export function createLogicLayer(container) {
   updateState();
 
   return {
+    element: root,
     pulseNodes,
     updateState
   };
