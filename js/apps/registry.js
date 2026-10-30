@@ -2,9 +2,10 @@
 // Uses dynamic or static imports for available apps.
 // Used by screens/stage.js and app loader.
 
-import * as Foodzy from "./Foodzy/index.js";
+import * as Foodzy from "./foodzy/index.js";
 
 const REGISTRY = {
+  foodzy: Foodzy,
   Foodzy
 };
 
@@ -14,7 +15,8 @@ const REGISTRY = {
  * @returns {object | null}
  */
 export function getAppModule(appId) {
-  return REGISTRY[appId] || null;
+  const id = typeof appId === "string" ? appId.toLowerCase() : "";
+  return REGISTRY[id] || REGISTRY[appId] || null;
 }
 
 /**

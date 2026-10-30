@@ -53,7 +53,7 @@ export function init() {
   initRouter();
 
   if (isDemoMode()) {
-    navigateTo("#/app/Foodzy");
+    navigateTo("#/app/foodzy");
     setTimeout(() => {
       initDemoMode();
     }, 100);

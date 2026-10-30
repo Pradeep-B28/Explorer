@@ -80,11 +80,11 @@
   min-width: 34px;
   min-height: 34px;
   border-radius: var(--radius-pill);
-  background: var(--Foodzy-soft);
-  color: var(--Foodzy);
+  background: var(--foodzy-soft);
+  color: var(--foodzy);
   font-weight: 800;
   font-size: 0.875rem;
-  border: 1px solid var(--Foodzy);
+  border: 1px solid var(--foodzy);
 }
 
 /* Home Screen: Search Box */
@@ -134,7 +134,7 @@
 .foodzy-offer-banner {
   margin: 6px 16px;
   padding: 8px 14px;
-  background: linear-gradient(90deg, var(--Foodzy), #EA580C);
+  background: linear-gradient(90deg, var(--foodzy), #EA580C);
   color: #FFFFFF;
   border-radius: 12px;
   font-size: 0.75rem;
@@ -313,7 +313,7 @@
   padding-top: 6px;
   border-top: 1px dashed var(--border);
   font-size: 0.6875rem;
-  color: var(--Foodzy);
+  color: var(--foodzy);
   font-weight: 600;
 }
 
@@ -345,8 +345,8 @@
 .restaurant-offer-strip {
   margin-top: 4px;
   padding: 4px 8px;
-  background: var(--Foodzy-soft);
-  color: var(--Foodzy);
+  background: var(--foodzy-soft);
+  color: var(--foodzy);
   font-size: 0.6875rem;
   font-weight: 700;
   border-radius: 6px;
@@ -460,8 +460,8 @@
 
 .dish-add-btn {
   background: var(--surface);
-  color: var(--Foodzy);
-  border: 1px solid var(--Foodzy);
+  color: var(--foodzy);
+  border: 1px solid var(--foodzy);
   font-size: 0.75rem;
   font-weight: 800;
   padding: 4px 18px;
@@ -475,7 +475,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--Foodzy);
+  background: var(--foodzy);
   color: #FFFFFF;
   border-radius: 8px;
   min-height: 30px;
@@ -509,7 +509,7 @@
   bottom: 12px;
   left: 12px;
   right: 12px;
-  background: var(--Foodzy);
+  background: var(--foodzy);
   color: #FFFFFF;
   border-radius: 12px;
   padding: 8px 14px;
@@ -681,7 +681,7 @@
 
 .checkout-place-btn {
   flex: 1;
-  background: var(--Foodzy);
+  background: var(--foodzy);
   color: #FFFFFF;
   font-size: 0.875rem;
   font-weight: 800;
@@ -706,7 +706,7 @@
 }
 
 .empty-cart-browse-btn {
-  background: var(--Foodzy);
+  background: var(--foodzy);
   color: #FFFFFF;
   font-size: 0.8125rem;
   font-weight: 700;
@@ -775,7 +775,7 @@
 }
 
 .placed-track-btn {
-  background: var(--Foodzy);
+  background: var(--foodzy);
   color: #FFFFFF;
   font-weight: 800;
   font-size: 0.875rem;
@@ -881,9 +881,9 @@
 }
 
 .track-step-item.active .track-step-dot {
-  background: var(--Foodzy);
-  border-color: var(--Foodzy);
-  box-shadow: 0 0 0 3px var(--Foodzy-soft);
+  background: var(--foodzy);
+  border-color: var(--foodzy);
+  box-shadow: 0 0 0 3px var(--foodzy-soft);
 }
 
 .track-step-label {
@@ -893,7 +893,7 @@
 }
 
 .track-step-item.active .track-step-label {
-  color: var(--Foodzy);
+  color: var(--foodzy);
   font-weight: 800;
 }
 
@@ -913,8 +913,8 @@
   width: 40px;
   height: 40px;
   border-radius: var(--radius-pill);
-  background: var(--Foodzy-soft);
-  color: var(--Foodzy);
+  background: var(--foodzy-soft);
+  color: var(--foodzy);
   font-weight: 800;
   font-size: 1rem;
   display: flex;

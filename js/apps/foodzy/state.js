@@ -3,11 +3,11 @@
 // Used by Foodzy app screens and index.js.
 
 import { getAppContent, CONFIG } from "../../content.js";
-import { emptyCart, addItem, removeItem, replaceWith, cartFrom, itemCount, bill } from "../../engine/Foodzy/cart.js";
-import { search } from "../../engine/Foodzy/search.js";
-import { orderId, trackingEta } from "../../engine/Foodzy/orders.js";
+import { emptyCart, addItem, removeItem, replaceWith, cartFrom, itemCount, bill } from "../../engine/foodzy/cart.js";
+import { search } from "../../engine/foodzy/search.js";
+import { orderId, trackingEta } from "../../engine/foodzy/orders.js";
 
-const { app, restaurants } = getAppContent("Foodzy");
+const { app, restaurants } = getAppContent("foodzy");
 
 // State
 let cart = emptyCart();

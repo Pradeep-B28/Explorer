@@ -1,15 +1,18 @@
-// Runs self-test checks a to m and displays results table for ?test=1.
+// Runs self-test checks a to q and displays results table for ?test=1.
 // Uses content.js, copy.js, links.js, store.js, progress.js, player.js, and engine.
 // Used by main.js, index.html (?test=1), and test verification.
 
 import { LAYERS, APPS, APP_CONTENT, getAppContent, getLayers, getJourneys } from "./content.js";
 import { COPY, t } from "./copy.js";
-import { bill, cartFrom, itemCount, addItem, removeItem, emptyCart } from "./engine/Foodzy/cart.js";
-import { search } from "./engine/Foodzy/search.js";
-import { orderId, trackingEta } from "./engine/Foodzy/orders.js";
+import { bill, cartFrom, itemCount, addItem, removeItem, emptyCart } from "./engine/foodzy/cart.js";
+import { search } from "./engine/foodzy/search.js";
+import { orderId, trackingEta } from "./engine/foodzy/orders.js";
 import { formatINR } from "./engine/money.js";
-import { journeyValues } from "./engine/Foodzy/values.js";
-import { hops, totalMs, travelMs, prepare } from "./engine/journey.js";
+import { journeyValues, cartBarLabel } from "./engine/foodzy/values.js";
+import { hops, totalMs, travelMs, prepare, latestCodeByLayer } from "./engine/journey.js";
+import { layoutFor, rowGeometry } from "./engine/layout.js";
+import { mount as mountFoodzy } from "./apps/foodzy/index.js";
+import { addCartItem, clearCart as clearFoodzyCart } from "./apps/foodzy/state.js";
 import { Player } from "./player.js";
 import { getWhatsAppLink, getProgramLink } from "./links.js";
 import { setStorageOverride } from "./store.js";
@@ -69,21 +72,23 @@ export function runSelfTest() {
     results.push({ id, name, pass: Boolean(pass), expected, actual });
   }
 
-  const { app, restaurants, journeys } = getAppContent("Foodzy");
+  const { app, restaurants, journeys } = getAppContent("foodzy");
 
   // Check a: Content
   const totalDishes = restaurants.reduce((n, r) => n + r.menu.length, 0);
-  const liveApps = APPS.filter((a) => a.status === "live").length;
+  const liveApps = APPS.filter((a) => a.status === "live");
   const journeyIds = journeys.map((j) => j.id);
   const actualA = {
+    liveApp: liveApps.length === 1 ? liveApps[0].id : null,
     layers: LAYERS.length,
     apps: APPS.length,
-    liveApps,
+    liveApps: liveApps.length,
     restaurants: restaurants.length,
     dishes: totalDishes,
     journeys: journeyIds
   };
   const expectedA = {
+    liveApp: "foodzy",
     layers: 5,
     apps: 4,
     liveApps: 1,
@@ -164,7 +169,7 @@ export function runSelfTest() {
   const f9 = formatINR(100000);
   const f10 = formatINR(1234567);
   const actualF = [f1, f2, f3, f4, f5, f6, f7, f8, f9, f10];
-  const expectedF = ["TH-52001", "TH-52012", 19, 11, 4, "₹0", "₹388", "₹1,000", "₹1,00,000", "₹12,34,567"];
+  const expectedF = ["FZ-52001", "FZ-52012", 19, 11, 4, "₹0", "₹388", "₹1,000", "₹1,00,000", "₹12,34,567"];
   check("f", "Numbers", same(actualF, expectedF), expectedF, actualF);
 
   // Check g: Journey values
@@ -175,11 +180,14 @@ export function runSelfTest() {
     order: { cart: cartFrom(restaurants, app.demoCart), orderNumber: 1 },
     track: { orderId: orderId(1, app.orders), shopId: demoShop }
   };
+  const addValues = journeyValues("add", ctx.add, { app, restaurants }, t);
   const gMatches = journeys.map((j) => {
     const built = journeyValues(j.id, ctx[j.id], { app, restaurants }, t);
     return same(built, j.demoValues);
   });
-  check("g", "Journey values", gMatches.every(Boolean), [true, true, true, true], gMatches);
+  const actualG = [...gMatches, addValues.priceLabel];
+  const expectedG = [true, true, true, true, "₹289"];
+  check("g", "Journey values", same(actualG, expectedG), expectedG, actualG);
 
   // Check h: Journey timing
   const J = Object.fromEntries(journeys.map((j) => [j.id, j]));
@@ -202,8 +210,8 @@ export function runSelfTest() {
   const i2 = orderSteps[4].db.row;
   const actualI = [i1, i2];
   const expectedI = [
-    "Order TH-52001 is placed. Marina Biryani Co. is cooking, and it should reach you in about 32 minutes.",
-    ["TH-52001", "Marina Biryani Co.", 388, "PLACED"]
+    "Order FZ-52001 is placed. Marina Biryani Co. is cooking, and it should reach you in about 32 minutes.",
+    ["FZ-52001", "Marina Biryani Co.", 388, "PLACED"]
   ];
   check("i", "Step text", same(actualI, expectedI), expectedI, actualI);
 
@@ -293,6 +301,76 @@ export function runSelfTest() {
     }
   }
   check("m", "Text", textViolations === 0, 0, textViolations);
+
+  // Check n: Cart bar (UPGRADE_BRIEF.md Section 15 check n)
+  const n1 = cartBarLabel(demoAddCart, { app, restaurants }, t);
+  const n2 = cartBarLabel(cartFrom(restaurants, app.demoCart), { app, restaurants }, t);
+  let n3Contains = false;
+  if (typeof document !== "undefined") {
+    const testContainer = document.createElement("div");
+    testContainer.id = "phone-screen";
+    testContainer.style.display = "none";
+    document.body.appendChild(testContainer);
+    clearFoodzyCart();
+    const inst = mountFoodzy(testContainer);
+    addCartItem("r1i1");
+    const barTextEl = testContainer.querySelector(".cart-bar-text");
+    const barText = barTextEl ? barTextEl.textContent : "";
+    n3Contains = barText.includes("1 item, ₹289");
+    clearFoodzyCart();
+    if (inst && typeof inst.unmount === "function") inst.unmount();
+    testContainer.remove();
+  } else {
+    n3Contains = true;
+  }
+  const actualN = [n1, n2, n3Contains];
+  const expectedN = ["1 item, ₹289", "2 items, ₹328", true];
+  check("n", "Cart bar", same(actualN, expectedN), expectedN, actualN);
+
+  // Check o: Code per layer (UPGRADE_BRIEF.md Section 15 check o)
+  const latestFull = latestCodeByLayer(orderSteps, LAYERS, orderSteps.length - 1);
+  const o1 = LAYERS.map((l) => latestFull[l.id] && latestFull[l.id].code.file);
+  const latest4 = latestCodeByLayer(orderSteps, LAYERS, 3);
+  const o2 = LAYERS.map((l) => latest4[l.id] ? latest4[l.id].id : null);
+  const o3 = journeys.map((j) => j.steps.reduce((n, st) => n + st.code.lines.length, 0));
+  const actualO = [o1, o2, o3];
+  const expectedO = [
+    ["public/order.html", "public/styles/order.css", "public/js/checkout.js", "server/routes/orders.js", "db/orders.sql"],
+    ["order-1", null, "order-2", "order-4", null],
+    [40, 87, 102, 68]
+  ];
+  check("o", "Code per layer", same(actualO, expectedO), expectedO, actualO);
+
+  // Check p: Layout (UPGRADE_BRIEF.md Section 15 check p)
+  const geo = (w, h) => {
+    const g = rowGeometry(w, h);
+    return [layoutFor(w, h), g.compact, g.rowHeight, g.phoneScale, g.screenWidth, g.cardWidth];
+  };
+  const actualP = [
+    geo(1920, 1080),
+    geo(1536, 864),
+    geo(1440, 900),
+    geo(1366, 768),
+    layoutFor(1024, 768),
+    layoutFor(1100, 660),
+    layoutFor(390, 844)
+  ];
+  const expectedP = [
+    ["laptop", false, 620, 0.768, 276, 301],
+    ["laptop", false, 420, 0.505, 182, 288],
+    ["laptop", false, 456, 0.553, 199, 260],
+    ["laptop", true, 384, 0.458, 165, 250],
+    "phone",
+    "phone",
+    "phone"
+  ];
+  check("p", "Layout", same(actualP, expectedP), expectedP, actualP);
+
+  // Check q: No sideways scroll (UPGRADE_BRIEF.md Section 15 check q)
+  const noScroll = typeof document !== "undefined"
+    ? document.documentElement.scrollWidth <= window.innerWidth
+    : true;
+  check("q", "No sideways scroll", noScroll, true, noScroll);
 
   const passes = results.filter((r) => r.pass).length;
   const failures = results.filter((r) => !r.pass).length;

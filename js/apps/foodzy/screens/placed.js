@@ -4,7 +4,7 @@
 
 import { getAppContent } from "../../../content.js";
 import { t } from "../../../copy.js";
-import { journeyValues } from "../../../engine/Foodzy/values.js";
+import { journeyValues } from "../../../engine/foodzy/values.js";
 import { emit } from "../../../events.js";
 import { navigate, getLastOrder } from "../state.js";
 

@@ -6,8 +6,8 @@ import { getAppContent, CONFIG } from "../../../content.js";
 import { t } from "../../../copy.js";
 import { formatINR } from "../../../engine/money.js";
 import { fillText } from "../../../engine/template.js";
-import { search } from "../../../engine/Foodzy/search.js";
-import { journeyValues } from "../../../engine/Foodzy/values.js";
+import { search } from "../../../engine/foodzy/search.js";
+import { journeyValues } from "../../../engine/foodzy/values.js";
 import { emit } from "../../../events.js";
 import { showToast } from "../../../ui/toast.js";
 import { createRestaurantCard } from "../ui/card.js";
@@ -20,7 +20,7 @@ import {
   subscribe
 } from "../state.js";
 
-const { app, restaurants } = getAppContent("Foodzy");
+const { app, restaurants } = getAppContent("foodzy");
 
 const LOCATION_PIN_SVG = `
   <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--Foodzy)" aria-hidden="true">

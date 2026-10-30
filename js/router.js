@@ -22,7 +22,12 @@ export function getRoute() {
 
   const parts = clean.split("/").filter(Boolean);
   if (parts[0] === "app" && parts[1]) {
-    return { route: "app", params: { id: parts[1] } };
+    const rawId = parts[1].toLowerCase();
+    if (rawId === "thattu") {
+      window.location.replace("#/app/foodzy");
+      return { route: "app", params: { id: "foodzy" } };
+    }
+    return { route: "app", params: { id: rawId } };
   }
 
   return { route: "home", params: {} };

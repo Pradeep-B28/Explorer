@@ -4,12 +4,12 @@
 
 import { getAppContent } from "../../../content.js";
 import { t } from "../../../copy.js";
-import { trackingEta } from "../../../engine/Foodzy/orders.js";
+import { trackingEta } from "../../../engine/foodzy/orders.js";
 import { showToast } from "../../../ui/toast.js";
 import { createTrackingMap } from "../ui/map.js";
 import { navigate, getLastOrder } from "../state.js";
 
-const { app } = getAppContent("Foodzy");
+const { app } = getAppContent("foodzy");
 
 const BACK_ARROW_SVG = `
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

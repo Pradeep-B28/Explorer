@@ -1,10 +1,14 @@
 // Floating cart summary bar sliding up from the bottom of the phone.
-// Uses js/copy.js and formatINR from js/engine/money.js.
+// Uses js/copy.js and cartBarLabel from js/engine/foodzy/values.js.
 // Used by Foodzy home and restaurant screens.
 
 import { t } from "../../../copy.js";
-import { formatINR } from "../../../engine/money.js";
-import { getItemCount, getBill } from "../state.js";
+import { getAppContent } from "../../../content.js";
+import { cartBarLabel } from "../../../engine/foodzy/values.js";
+import { getItemCount, getCart } from "../state.js";
+
+const { app, restaurants } = getAppContent("foodzy");
+const data = { app, restaurants };
 
 /**
  * Creates the floating bottom cart bar.
@@ -26,7 +30,7 @@ export function createCartBar(onViewCart) {
   const rightBtn = document.createElement("button");
   rightBtn.type = "button";
   rightBtn.className = "cart-bar-btn";
-  rightBtn.textContent = t("Foodzy.viewCart");
+  rightBtn.textContent = t("foodzy.viewCart");
   rightBtn.addEventListener("click", () => onViewCart());
 
   bar.appendChild(left);
@@ -35,9 +39,7 @@ export function createCartBar(onViewCart) {
   function update() {
     const count = getItemCount();
     if (count > 0) {
-      const b = getBill();
-      const totalStr = formatINR(b.total);
-      countTotalText.textContent = t("cart.bar", { n: count, total: totalStr });
+      countTotalText.textContent = cartBarLabel(getCart(), data, t);
       bar.classList.add("visible");
       bar.removeAttribute("hidden");
     } else {

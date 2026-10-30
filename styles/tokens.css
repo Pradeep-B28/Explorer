@@ -32,9 +32,18 @@
   --beam: linear-gradient(180deg, #22D3EE, #10B981);
 
   /* Foodzy tokens */
-  --Foodzy: #C2410C;
-  --Foodzy-strong: #9A3412;
-  --Foodzy-soft: #FFF7ED;
+  --foodzy: #C2410C;
+  --foodzy-strong: #9A3412;
+  --foodzy-soft: #FFF7ED;
+  --Foodzy: var(--foodzy);
+  --Foodzy-strong: var(--foodzy-strong);
+  --Foodzy-soft: var(--foodzy-soft);
+
+  /* App colors for home page icons (UPGRADE_BRIEF.md Section 14) */
+  --app-foodzy: #C2410C;
+  --app-mpay: #0369A1;
+  --app-chitchat: #BE185D;
+  --app-tripz: #0F766E;
   --rating: #15803D;
   --veg: #15803D;
   --nonveg: #B91C1C;
@@ -112,9 +121,12 @@
     --layer-database: #818CF8;
     --layer-card: rgba(30, 41, 59, 0.88);
 
-    --Foodzy: #FB923C;
-    --Foodzy-strong: #FDBA74;
-    --Foodzy-soft: rgba(251, 146, 60, 0.14);
+    --foodzy: #FB923C;
+    --foodzy-strong: #FDBA74;
+    --foodzy-soft: rgba(251, 146, 60, 0.14);
+    --Foodzy: var(--foodzy);
+    --Foodzy-strong: var(--foodzy-strong);
+    --Foodzy-soft: var(--foodzy-soft);
     --rating: #16A34A;
     --veg: #22C55E;
     --nonveg: #F87171;
@@ -153,9 +165,12 @@
   --layer-database: #818CF8;
   --layer-card: rgba(30, 41, 59, 0.88);
 
-  --Foodzy: #FB923C;
-  --Foodzy-strong: #FDBA74;
-  --Foodzy-soft: rgba(251, 146, 60, 0.14);
+  --foodzy: #FB923C;
+  --foodzy-strong: #FDBA74;
+  --foodzy-soft: rgba(251, 146, 60, 0.14);
+  --Foodzy: var(--foodzy);
+  --Foodzy-strong: var(--foodzy-strong);
+  --Foodzy-soft: var(--foodzy-soft);
   --rating: #16A34A;
   --veg: #22C55E;
   --nonveg: #F87171;

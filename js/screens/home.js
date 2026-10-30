@@ -52,7 +52,7 @@ export function mount(container) {
   ctaGroup.className = "home-hero-ctas";
 
   const openBtn = document.createElement("a");
-  openBtn.href = "#/app/Foodzy";
+  openBtn.href = "#/app/foodzy";
   openBtn.className = "home-btn-primary";
   openBtn.textContent = t("home.open");
 

@@ -5,7 +5,7 @@
 import { getAppContent } from "../../../content.js";
 import { t } from "../../../copy.js";
 import { formatINR } from "../../../engine/money.js";
-import { journeyValues } from "../../../engine/Foodzy/values.js";
+import { journeyValues } from "../../../engine/foodzy/values.js";
 import { emit } from "../../../events.js";
 import {
   getCart,
@@ -17,7 +17,7 @@ import {
   subscribe
 } from "../state.js";
 
-const { restaurants, app } = getAppContent("Foodzy");
+const { restaurants, app } = getAppContent("foodzy");
 
 const BACK_ARROW_SVG = `
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

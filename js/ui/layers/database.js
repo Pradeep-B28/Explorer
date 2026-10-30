@@ -13,7 +13,7 @@ export function createDatabaseLayer(container) {
   const root = document.createElement("div");
   root.className = "layer-database-content";
 
-  const { app, restaurants } = getAppContent("Foodzy");
+  const { app, restaurants } = getAppContent("foodzy");
 
   // Tab Strip
   const tabStrip = document.createElement("div");

@@ -36,8 +36,9 @@ export function getApp(appId) {
  * @param {string} appId
  * @returns {{ app: object, restaurants: Array, journeys: Array } | null}
  */
-export function getAppContent(appId = "Foodzy") {
-  return APP_CONTENT[appId] || null;
+export function getAppContent(appId = "foodzy") {
+  const id = typeof appId === "string" ? appId.toLowerCase() : "foodzy";
+  return APP_CONTENT[id] || APP_CONTENT[appId] || null;
 }
 
 /**
@@ -45,7 +46,7 @@ export function getAppContent(appId = "Foodzy") {
  * @param {string} appId
  * @returns {Array}
  */
-export function getJourneys(appId = "Foodzy") {
+export function getJourneys(appId = "foodzy") {
   const content = getAppContent(appId);
   return content ? content.journeys : [];
 }
@@ -56,7 +57,7 @@ export function getJourneys(appId = "Foodzy") {
  * @param {string} journeyId
  * @returns {object | null}
  */
-export function getJourney(appId = "Foodzy", journeyId) {
+export function getJourney(appId = "foodzy", journeyId) {
   const journeys = getJourneys(appId);
   return journeys.find((j) => j.id === journeyId) || null;
 }
@@ -66,7 +67,7 @@ export function getJourney(appId = "Foodzy", journeyId) {
  * @param {string} appId
  * @returns {Array}
  */
-export function getRestaurants(appId = "Foodzy") {
+export function getRestaurants(appId = "foodzy") {
   const content = getAppContent(appId);
   return content ? content.restaurants : [];
 }

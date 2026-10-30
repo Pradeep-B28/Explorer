@@ -4,7 +4,7 @@
 
 import { getAppContent } from "../../content.js";
 import { formatINR } from "../../engine/money.js";
-import { cartFrom } from "../../engine/Foodzy/cart.js";
+import { cartFrom } from "../../engine/foodzy/cart.js";
 import {
   getScreen,
   navigate,
@@ -25,7 +25,7 @@ import { mount as mountCart } from "./screens/cart.js";
 import { mount as mountPlaced } from "./screens/placed.js";
 import { mount as mountTrack } from "./screens/track.js";
 
-const { app, restaurants } = getAppContent("Foodzy");
+const { app, restaurants } = getAppContent("foodzy");
 
 /**
  * Mounts Foodzy into the target phone screen element.
@@ -178,6 +178,29 @@ export function wireframeTargets() {
     ".track-status-card"
   ];
   return Array.from(root.querySelectorAll(selectors.join(",")));
+}
+
+/**
+ * Returns a small plain object snapshot for the Logic card.
+ * (UPGRADE_BRIEF.md Section 5: under 8 keys)
+ * @returns {object}
+ */
+export function stateSnapshot() {
+  const { screen } = getScreen();
+  const cart = getCart();
+  const count = getItemCount();
+  const b = getBill();
+  const lastOrder = getLastOrder();
+
+  return {
+    screen,
+    cart: {
+      shop: cart.shopId || null,
+      items: count,
+      itemTotal: b.itemTotal
+    },
+    lastOrder: lastOrder ? lastOrder.id : null
+  };
 }
 
 /**
