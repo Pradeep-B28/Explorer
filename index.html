@@ -99,6 +99,13 @@
       }
     }
 
+    if (urlParams.get("test") === "1") {
+      import("./js/selftest.js").then((mod) => {
+        const root = document.getElementById("app-root");
+        if (root) mod.renderSelfTestDOM(root);
+      });
+    }
+
     if (toggleBtn) {
       toggleBtn.addEventListener("click", () => {
         const currentTheme = document.documentElement.getAttribute("data-theme") || "light";
