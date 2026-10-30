@@ -149,10 +149,17 @@ export function getPlacedOrders() {
   return placedOrders;
 }
 
+export function loadDemoCart() {
+  const demo = cartFrom(restaurants, app.demoCart);
+  setCart(demo);
+  return demo;
+}
+
 if (typeof window !== "undefined") {
   window.__foodzyState = {
     getCart,
     setCart,
+    loadDemoCart,
     addCartItem,
     removeCartItem,
     getScreen,

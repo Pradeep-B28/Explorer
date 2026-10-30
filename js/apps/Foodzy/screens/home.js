@@ -6,6 +6,9 @@ import { getAppContent, CONFIG } from "../../../content.js";
 import { t } from "../../../copy.js";
 import { formatINR } from "../../../engine/money.js";
 import { fillText } from "../../../engine/template.js";
+import { search } from "../../../engine/Foodzy/search.js";
+import { journeyValues } from "../../../engine/Foodzy/values.js";
+import { emit } from "../../../events.js";
 import { showToast } from "../../../ui/toast.js";
 import { createRestaurantCard } from "../ui/card.js";
 import { createCartBar } from "../ui/cartbar.js";
@@ -17,7 +20,7 @@ import {
   subscribe
 } from "../state.js";
 
-const { app } = getAppContent("Foodzy");
+const { app, restaurants } = getAppContent("Foodzy");
 
 const LOCATION_PIN_SVG = `
   <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--Foodzy)" aria-hidden="true">
@@ -99,6 +102,23 @@ export function mount(container, ctx = {}) {
   searchWrap.appendChild(searchBox);
   root.appendChild(searchWrap);
 
+  function triggerSearch(val) {
+    const isExplaining = typeof window !== "undefined" && window.__isExplaining;
+    const res = search(restaurants, val, CONFIG.limits.searchMinChars);
+    if (isExplaining && res.active && res.results.length > 0) {
+      const values = journeyValues("search", { query: val, result: res }, { app, restaurants }, t);
+      emit("journey:request", {
+        journeyId: "search",
+        values,
+        commit: () => {
+          executeSearch(val);
+        }
+      });
+    } else {
+      executeSearch(val);
+    }
+  }
+
   // Debounced search handling
   let debounceTimer = null;
   input.addEventListener("input", () => {
@@ -109,17 +129,27 @@ export function mount(container, ctx = {}) {
       clearBtn.setAttribute("hidden", "");
     }
 
-    if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      executeSearch(val);
-    }, CONFIG.limits.searchDebounceMs || 300);
+    const isExplaining = typeof window !== "undefined" && window.__isExplaining;
+    if (!isExplaining) {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        executeSearch(val);
+      }, CONFIG.limits.searchDebounceMs || 300);
+    }
   });
 
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
+      e.preventDefault();
       if (debounceTimer) clearTimeout(debounceTimer);
-      executeSearch(input.value);
+      triggerSearch(input.value);
     }
+  });
+
+  searchIcon.style.cursor = "pointer";
+  searchIcon.addEventListener("click", () => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    triggerSearch(input.value);
   });
 
   clearBtn.addEventListener("click", () => {
@@ -151,7 +181,7 @@ export function mount(container, ctx = {}) {
     chip.addEventListener("click", () => {
       input.value = cat;
       clearBtn.removeAttribute("hidden");
-      executeSearch(cat);
+      triggerSearch(cat);
     });
     catWrap.appendChild(chip);
   });

@@ -5,6 +5,9 @@
 import { getAppContent, CONFIG } from "../../../content.js";
 import { t } from "../../../copy.js";
 import { formatINR } from "../../../engine/money.js";
+import { addItem } from "../../../engine/Foodzy/cart.js";
+import { journeyValues } from "../../../engine/Foodzy/values.js";
+import { emit } from "../../../events.js";
 import { showToast } from "../../../ui/toast.js";
 import { showConfirmDialog } from "../../../ui/dialog.js";
 import { createDishRow } from "../ui/dish.js";
@@ -110,9 +113,11 @@ export function mount(container, { restaurantId }) {
   root.appendChild(cartBar.element);
 
   function handleAdd(dishId) {
-    const res = addCartItem(dishId);
+    const isExplaining = typeof window !== "undefined" && window.__isExplaining;
+    const currentCart = getCart();
+    const res = addItem(currentCart, restaurants, dishId, CONFIG.limits.maxQtyPerItem);
+
     if (res.reason === "other-shop") {
-      const currentCart = getCart();
       const currentShop = restaurants.find((r) => r.id === currentCart.shopId);
       const shopName = currentShop ? currentShop.name : "another restaurant";
 
@@ -124,8 +129,25 @@ export function mount(container, { restaurantId }) {
         onStart: () => replaceCartWith(dishId),
         container: root
       });
-    } else if (res.reason === "max-qty") {
+      return;
+    }
+
+    if (res.reason === "max-qty") {
       showToast(t("Foodzy.maxQty", { n: CONFIG.limits.maxQtyPerItem }), root);
+      return;
+    }
+
+    if (isExplaining && res.cart) {
+      const values = journeyValues("add", { cart: res.cart, itemId: dishId }, { app, restaurants }, t);
+      emit("journey:request", {
+        journeyId: "add",
+        values,
+        commit: () => {
+          addCartItem(dishId);
+        }
+      });
+    } else {
+      addCartItem(dishId);
     }
   }
 

@@ -5,6 +5,8 @@
 import { getAppContent } from "../../../content.js";
 import { t } from "../../../copy.js";
 import { formatINR } from "../../../engine/money.js";
+import { journeyValues } from "../../../engine/Foodzy/values.js";
+import { emit } from "../../../events.js";
 import {
   getCart,
   getBill,
@@ -248,7 +250,22 @@ export function mount(container) {
     placeBtn.className = "checkout-place-btn";
     placeBtn.textContent = t("Foodzy.placeOrder");
     placeBtn.addEventListener("click", () => {
-      placeCurrentOrder();
+      const isExplaining = typeof window !== "undefined" && window.__isExplaining;
+      const currentCart = getCart();
+      if (!currentCart || currentCart.lines.length === 0) return;
+
+      if (isExplaining) {
+        const values = journeyValues("order", { cart: currentCart, orderNumber: 1 }, { app, restaurants }, t);
+        emit("journey:request", {
+          journeyId: "order",
+          values,
+          commit: () => {
+            placeCurrentOrder();
+          }
+        });
+      } else {
+        placeCurrentOrder();
+      }
     });
 
     footer.appendChild(footerTotal);

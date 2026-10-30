@@ -162,6 +162,7 @@ export function createExplodedStack(phoneFrameObj, phoneScreenEl) {
    */
   function explode() {
     isExploded = true;
+    if (typeof window !== "undefined") window.__isExplaining = true;
     stack.classList.add("explaining");
     stack.classList.add("exploded");
 
@@ -192,6 +193,7 @@ export function createExplodedStack(phoneFrameObj, phoneScreenEl) {
    */
   function collapse() {
     isExploded = false;
+    if (typeof window !== "undefined") window.__isExplaining = false;
     stack.classList.remove("soft-tilt");
     stack.classList.remove("exploded");
     setActiveLayer(-1);

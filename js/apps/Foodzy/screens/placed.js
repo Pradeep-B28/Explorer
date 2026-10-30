@@ -2,8 +2,13 @@
 // Uses Foodzy state and copy.js.
 // Used by Foodzy app index.js.
 
+import { getAppContent } from "../../../content.js";
 import { t } from "../../../copy.js";
+import { journeyValues } from "../../../engine/Foodzy/values.js";
+import { emit } from "../../../events.js";
 import { navigate, getLastOrder } from "../state.js";
+
+const { app, restaurants } = getAppContent("Foodzy");
 
 const TICK_SVG = `
   <svg class="success-tick-svg" width="64" height="64" viewBox="0 0 64 64" fill="none" aria-hidden="true">
@@ -58,7 +63,21 @@ export function mount(container, params = {}) {
   trackBtn.className = "placed-track-btn";
   trackBtn.textContent = t("Foodzy.track");
   trackBtn.addEventListener("click", () => {
-    navigate("track", { orderId, shopName, eta });
+    const isExplaining = typeof window !== "undefined" && window.__isExplaining;
+    const order = getLastOrder() || { id: orderId, shopId: "r1" };
+
+    if (isExplaining) {
+      const values = journeyValues("track", { orderId: order.id, shopId: order.shopId || "r1" }, { app, restaurants }, t);
+      emit("journey:request", {
+        journeyId: "track",
+        values,
+        commit: () => {
+          navigate("track", { orderId, shopName, eta });
+        }
+      });
+    } else {
+      navigate("track", { orderId, shopName, eta });
+    }
   });
 
   const homeBtn = document.createElement("button");

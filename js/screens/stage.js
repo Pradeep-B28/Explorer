@@ -7,6 +7,7 @@ import { t } from "../copy.js";
 import { getAppModule } from "../apps/registry.js";
 import { createPhoneFrame } from "../ui/phone.js";
 import { createExplodedStack } from "../ui/exploded.js";
+import { createPanel } from "../ui/panel.js";
 
 const BACK_ARROW_SVG = `
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -99,13 +100,9 @@ export function mount(container, { appId = "Foodzy" }) {
     if (!explodedStack.isExploded) {
       explodedStack.explode();
       explodeBtn.textContent = t("stage.together");
-      pTitle.textContent = t("stage.intro.title");
-      pBody.textContent = t("stage.intro.body");
     } else {
       explodedStack.collapse();
       explodeBtn.textContent = t("stage.explode");
-      pTitle.textContent = t("panel.intro.title");
-      pBody.textContent = t("panel.intro.body");
     }
   });
 
@@ -118,52 +115,16 @@ export function mount(container, { appId = "Foodzy" }) {
   const panelCol = document.createElement("div");
   panelCol.className = "stage-panel-col";
 
-  const panelCard = document.createElement("div");
-  panelCard.className = "stage-panel-card";
-
-  const pTitle = document.createElement("h2");
-  pTitle.className = "stage-panel-title";
-  pTitle.textContent = t("panel.intro.title");
-
-  const pBody = document.createElement("p");
-  pBody.className = "stage-panel-body";
-  pBody.textContent = t("panel.intro.body");
-
-  panelCard.appendChild(pTitle);
-  panelCard.appendChild(pBody);
-
-  // Layers list chips
-  const layersList = document.createElement("div");
-  layersList.className = "stage-layers-list";
-  getLayers().forEach((l, idx) => {
-    const chip = document.createElement("div");
-    chip.className = `stage-layer-chip layer-${l.id}`;
-    chip.style.cursor = "pointer";
-    chip.addEventListener("click", () => {
-      if (explodedStack.isExploded) {
-        explodedStack.setActiveLayer(idx);
+  const panelObj = createPanel(panelCol, {
+    appId,
+    explodedStack,
+    onDoItForMe: (journeyId) => {
+      if (appModule && typeof appModule.doItForMe === "function") {
+        appModule.doItForMe(journeyId);
       }
-    });
-
-    const dot = document.createElement("span");
-    dot.className = "stage-layer-dot";
-    dot.style.background = `var(--layer-${l.id})`;
-
-    const name = document.createElement("strong");
-    name.textContent = l.name;
-
-    const tech = document.createElement("span");
-    tech.className = "stage-layer-tech";
-    tech.textContent = `(${l.tech})`;
-
-    chip.appendChild(dot);
-    chip.appendChild(name);
-    chip.appendChild(tech);
-    layersList.appendChild(chip);
+    }
   });
-  panelCard.appendChild(layersList);
 
-  panelCol.appendChild(panelCard);
   body.appendChild(panelCol);
   root.appendChild(body);
 
@@ -184,6 +145,9 @@ export function mount(container, { appId = "Foodzy" }) {
     unmount() {
       window.removeEventListener("resize", handleResize);
       delete window.__explodedStack;
+      if (panelObj && typeof panelObj.unmount === "function") {
+        panelObj.unmount();
+      }
       if (appInstance && typeof appInstance.unmount === "function") {
         appInstance.unmount();
       }

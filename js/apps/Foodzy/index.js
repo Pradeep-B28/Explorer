@@ -81,6 +81,24 @@ export function mount(screenEl, ctx = {}) {
   };
 }
 
+function showTapRingAndClick(el) {
+  if (!el) return;
+  const rect = el.getBoundingClientRect();
+  const screen = document.getElementById("phone-screen") || document.body;
+  const screenRect = screen.getBoundingClientRect();
+
+  const ring = document.createElement("div");
+  ring.className = "doit-tap-ring";
+  ring.style.left = `${(rect.left + rect.width / 2) - screenRect.left}px`;
+  ring.style.top = `${(rect.top + rect.height / 2) - screenRect.top}px`;
+  screen.appendChild(ring);
+
+  setTimeout(() => {
+    ring.remove();
+    el.click();
+  }, 250);
+}
+
 /**
  * Prepares the flow prerequisite and performs the action for "Do it for me".
  * @param {string} journeyId
@@ -88,19 +106,23 @@ export function mount(screenEl, ctx = {}) {
 export function doItForMe(journeyId) {
   switch (journeyId) {
     case "add": {
-      // Go to first restaurant and add dish r1i1
+      // Go to first restaurant and tap ADD on dish r1i1
       navigate("restaurant", { restaurantId: restaurants[0].id });
       setTimeout(() => {
         const dishBtn = document.querySelector(`[data-dish-id="${restaurants[0].menu[0].id}"] .dish-add-btn`);
-        if (dishBtn) dishBtn.click();
-      }, 50);
+        if (dishBtn) showTapRingAndClick(dishBtn);
+      }, 150);
       break;
     }
     case "search": {
       navigate("home");
       setTimeout(() => {
-        executeSearch("biryani");
-      }, 50);
+        const input = document.querySelector(".foodzy-search-input");
+        const icon = document.querySelector(".search-icon-svg");
+        if (input) input.value = "biryani";
+        if (icon) showTapRingAndClick(icon);
+        else executeSearch("biryani");
+      }, 150);
       break;
     }
     case "order": {
@@ -110,8 +132,8 @@ export function doItForMe(journeyId) {
       navigate("cart");
       setTimeout(() => {
         const placeBtn = document.getElementById("place-order");
-        if (placeBtn) placeBtn.click();
-      }, 50);
+        if (placeBtn) showTapRingAndClick(placeBtn);
+      }, 150);
       break;
     }
     case "track": {
@@ -126,8 +148,8 @@ export function doItForMe(journeyId) {
       }
       setTimeout(() => {
         const trackBtn = document.querySelector(".placed-track-btn");
-        if (trackBtn) trackBtn.click();
-      }, 50);
+        if (trackBtn) showTapRingAndClick(trackBtn);
+      }, 150);
       break;
     }
   }
