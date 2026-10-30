@@ -46,7 +46,8 @@ export function hops(journey, layers) {
 }
 
 // The steps, filled with values and ready for the player.
-// Each step gets: from, to, distance, travel (ms at this speed), duration (ms at this speed).
+// Each step gets: from, to, distance, travel (ms at this speed), duration (ms at this speed),
+// plus code (lang, file, lines), packet, log and route (Server steps), db (Database steps) and commit.
 export function prepare(journey, layers, values, speed = 1) {
   const missing = missingValues(journey, values);
   if (missing.length) throw new Error(`Journey "${journey.id}" is missing values: ${missing.join(", ")}`);
@@ -58,9 +59,10 @@ export function prepare(journey, layers, values, speed = 1) {
     layer: s.layer,
     title: s.title,
     say: fill(s.say, values),
-    code: { lang: s.code.lang, lines: fill(s.code.lines, values) },
+    code: { lang: s.code.lang, file: s.code.file, lines: fill(s.code.lines, values) },
     packet: { label: s.packet.label, data: fill(s.packet.data, values) },
     log: s.log ? fill(s.log, values) : null,
+    route: s.route || null,
     db: s.db ? fill(s.db, values) : null,
     commit: s.commit === true,
     from: moves[i].from,
@@ -74,4 +76,16 @@ export function prepare(journey, layers, values, speed = 1) {
 // Placeholder keys used anywhere in a journey's steps (for the content check).
 export function usedKeys(journey) {
   return placeholdersDeep(journey.steps.map((s) => [s.say, s.code.lines, s.packet.data, s.log || "", s.db || {}]));
+}
+
+// The code each layer ran most recently, up to and including step index upto.
+// Returns { screen: step | null, styling: ..., logic: ..., server: ..., database: ... } using prepared steps.
+// The dock's code tabs and the "full stack code" sheet use this.
+export function latestCodeByLayer(steps, layers, upto) {
+  const out = {};
+  for (const l of layers) out[l.id] = null;
+  steps.forEach((s, i) => {
+    if (i <= upto) out[s.layer] = s;
+  });
+  return out;
 }

@@ -18,7 +18,7 @@ Everything in `content/` is locked. Gemini reads it and never edits it. `node to
 
 `APPS`: the app registry. `id` (2 to 12 lowercase letters), `name`, `kind`, `status` (`live` or `soon`), `teaser`. Every `live` app has an entry in `APP_CONTENT` in `index.js`.
 
-## apps/Foodzy/app.js
+## apps/foodzy/app.js
 
 | Field | Meaning |
 |---|---|
@@ -27,21 +27,22 @@ Everything in `content/` is locked. Gemini reads it and never edits it. `node to
 | `riderName` | The delivery rider in the tracking flow |
 | `offerBanner` | Home banner. `{freeAbove}` is filled with `formatINR(fees.freeDeliveryAbove)` |
 | `categories` | Chips on the home screen. Tapping one runs a search for that word. Each finds at least 1 restaurant |
-| `fees` | `delivery`, `freeDeliveryAbove`, `platform`, `gstPercent`. Only `js/engine/Foodzy/cart.js` uses them |
+| `fees` | `delivery`, `freeDeliveryAbove`, `platform`, `gstPercent`. Only `js/engine/foodzy/cart.js` uses them |
 | `orders` | `prefix` and `start` for order numbers. Only `orders.js` uses them |
 | `payment` | Payment method shown on the cart screen ("UPI") |
+| `api` | The routes the Server card lists: `id`, `method` (GET, POST, PUT, DELETE or WS) and `path`. Server steps name one by `id` |
 | `demoCart` | The cart "Do it for me" and demo mode build for the order flow |
 | `seedOrders` | 2 older rows shown in the Database layer's orders table |
 
-## apps/Foodzy/restaurants.js
+## apps/foodzy/restaurants.js
 
 `RESTAURANTS`: `id` (r1), `name` (26 max), `cuisine`, `area`, `rating` (3.0 to 5.0, one decimal), `etaMin` (10 to 60), `priceForTwo`, `pureVeg`, `image`, `menu`.
 
-`image` is a file name in `assets/food/`. The file is optional. If it is missing or fails to load, draw the fallback (Section 6D of the brief).
+`image` is a file name in `assets/food/shops/`. Each dish also has `image` (always `<dish id>.jpg`) in `assets/food/dishes/`. If a photo is missing or fails to load, draw the fallback.
 
-Each dish: `id` (r1i1), `name` (26 max), `price` (whole rupees), `veg`, `bestseller`, `desc` (70 max). A `pureVeg` restaurant has only veg dishes.
+Each dish: `id` (r1i1), `image` (r1i1.jpg), `name` (26 max), `price` (whole rupees), `veg`, `bestseller`, `desc` (70 max). A `pureVeg` restaurant has only veg dishes.
 
-## apps/Foodzy/journeys.js
+## apps/foodzy/journeys.js
 
 `JOURNEYS`: `add`, `search`, `order`, `track`, in that order.
 
@@ -64,12 +65,25 @@ Each step:
 | `layer` | Which layer lights up |
 | `title` | Step heading, 32 max |
 | `say` | The plain English line, 160 max |
-| `code` | `lang` (`html`, `css`, `js`, `sql`, `text`) and 1 to 5 `lines`, 60 characters max each |
+| `code` | `lang`, `file` and 3 to 14 `lines`, 64 characters max each (68 once filled). No blank first or last line. See the table below |
 | `packet` | `label` (on the travelling chip) and `data` (the small JSON shown in the panel) |
-| `log` | Server steps only: the line added to the Server layer's request log |
+| `log` | Server steps only: the line added to the Server card's request log |
+| `route` | Server steps only: the `app.api` route id the Server card lights up |
 | `db` | Database steps only: `table`, `action` (`select`, `insert`, `update`), `columns`, `row` |
 | `commit` | On exactly one Styling step: the moment the phone screen actually changes |
 | `ms` | How long the step lasts at 1x, travel included |
+
+### Code file and language per layer
+
+| Layer | `lang` | `file` |
+|---|---|---|
+| Screen | `html` | `public/<name>.html` |
+| Styling | `css` | `public/styles/<name>.css` |
+| Logic | `js` | `public/js/<name>.js` |
+| Server | `js` or `http` | `server/<path>.js`, or `HTTP response` with `http` |
+| Database | `sql` | `db/<name>.sql` |
+
+The file path is shown above the code like a real editor tab. It is a made-up project layout for teaching.
 
 ### Placeholders
 

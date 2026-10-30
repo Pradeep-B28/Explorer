@@ -1,6 +1,7 @@
-Optional restaurant photos for Thattu. The site works without them.
+Foodzy photos. Plain, realistic food photos are enough.
+If a photo is missing, the site draws a fallback, so it never breaks.
 
-File names (exactly these):
+Restaurant photos, in assets/food/shops/ (800 x 450, under 120 KB each):
   marina-biryani.jpg      Marina Biryani Co.
   anna-nagar-tiffin.jpg   Anna Nagar Tiffin House
   filter-kaapi-stop.jpg   Filter Kaapi Stop
@@ -8,5 +9,10 @@ File names (exactly these):
   beach-road-grills.jpg   Beach Road Grills
   kolam-creamery.jpg      Kolam Creamery
 
-Size: 800 x 450, under 120 KB each.
-Source: Antigravity's image tool or a free stock site. Never a real restaurant's or delivery app's photo.
+Dish photos, in assets/food/dishes/ (400 x 400, under 45 KB each):
+  One per dish, named by dish id: r1i1.jpg to r1i6.jpg, r2i1.jpg to r2i5.jpg,
+  r3i1.jpg to r3i5.jpg, r4i1.jpg to r4i5.jpg, r5i1.jpg to r5i5.jpg, r6i1.jpg to r6i5.jpg.
+  The dish names are in content/apps/foodzy/restaurants.js.
+
+Source: Antigravity's image tool, or a free stock site whose licence allows commercial use.
+Never a photo from a real restaurant or a real delivery app. No text, logos or people's faces in photos.

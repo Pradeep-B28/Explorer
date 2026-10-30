@@ -1,4 +1,4 @@
-// Content and engine check for The Exploded App. Run from the project folder:  node tools/verify-content.mjs
+// Content and engine check for Explorer. Run from the project folder:  node tools/verify-content.mjs
 //
 // It checks, without a browser:
 //   1. every field in content/ against content/SCHEMA.md
@@ -15,12 +15,13 @@ import { dirname, join } from "node:path";
 import { LAYERS, APPS, APP_CONTENT, CONTENT_VERSION } from "../content/index.js";
 import { CONFIG } from "../config.js";
 import { placeholders, placeholdersDeep, fill, fillText } from "../js/engine/template.js";
-import { prepare, hops, totalMs, travelMs, usedKeys, missingValues } from "../js/engine/journey.js";
+import { prepare, hops, totalMs, travelMs, usedKeys, missingValues, latestCodeByLayer } from "../js/engine/journey.js";
+import { rowGeometry, layoutFor, flatPhoneScale } from "../js/engine/layout.js";
 import { formatINR } from "../js/engine/money.js";
-import { emptyCart, addItem, removeItem, cartFrom, itemCount, bill } from "../js/engine/Foodzy/cart.js";
-import { search } from "../js/engine/Foodzy/search.js";
-import { orderId, trackingEta } from "../js/engine/Foodzy/orders.js";
-import { journeyValues } from "../js/engine/Foodzy/values.js";
+import { emptyCart, addItem, removeItem, cartFrom, itemCount, bill } from "../js/engine/foodzy/cart.js";
+import { search } from "../js/engine/foodzy/search.js";
+import { orderId, trackingEta } from "../js/engine/foodzy/orders.js";
+import { journeyValues, cartBarLabel } from "../js/engine/foodzy/values.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -36,8 +37,10 @@ const BRANDS = [
   "flipkart", "rapido", "uber", "ola", "dunzo", "zepto", "blinkit", "bigbasket", "claude", "vscode",
   "vs code", "whatsapp", "redbus"
 ];
+// v1 names. Renamed in v2, so none may appear anywhere a visitor can see.
+const OLD_NAMES = ["thattu", "kaasu", "pesu", "payanam", "the exploded app"];
 const LAYER_IDS = ["screen", "styling", "logic", "server", "database"];
-const LANGS = ["html", "css", "js", "sql", "text"];
+const LANGS = ["html", "css", "js", "sql", "http"];
 const TRIGGERS = ["add", "search", "place-order", "track"];
 const NEEDS = ["none", "results", "cart", "order"];
 
@@ -64,6 +67,8 @@ function checkText(where, label, text, { brands = BRANDS, max = 0 } = {}) {
   if (EMOJI.test(text)) fail(where, `${label} has an emoji`);
   const lower = text.toLowerCase();
   for (const b of BANNED) if (lower.includes(b)) fail(where, `${label} uses the banned word "${b}"`);
+  const old = brandHit(text, OLD_NAMES);
+  if (old) fail(where, `${label} still uses the old name "${old}" (UPGRADE_BRIEF.md Section 4)`);
   const hit = brandHit(text, brands);
   if (hit) fail(where, `${label} names a real brand ("${hit}")`);
   if (max && text.length > max) fail(where, `${label} is ${text.length} characters (max ${max})`);
@@ -75,7 +80,7 @@ function section(name) {
 // ---------------------------------------------------------------- 1. Layers and apps
 section("1. Layers and app registry");
 ok(isStr(CONTENT_VERSION), "content", "CONTENT_VERSION missing");
-ok(same([LAYERS.length, APPS.length, APP_CONTENT.Foodzy.restaurants.length, APP_CONTENT.Foodzy.restaurants.reduce((n, r) => n + r.menu.length, 0), APP_CONTENT.Foodzy.journeys.length], [5, 4, 6, 31, 4]), "content", "counts must be 5 layers, 4 apps, 6 restaurants, 31 dishes, 4 journeys (Section 10 check a)");
+ok(same([LAYERS.length, APPS.length, APP_CONTENT.foodzy.restaurants.length, APP_CONTENT.foodzy.restaurants.reduce((n, r) => n + r.menu.length, 0), APP_CONTENT.foodzy.journeys.length], [5, 4, 6, 31, 4]), "content", "counts must be 5 layers, 4 apps, 6 restaurants, 31 dishes, 4 journeys (Section 10 check a)");
 ok(same(LAYERS.map((l) => l.id), LAYER_IDS), "layers", `must be exactly ${LAYER_IDS.join(", ")} in that order`);
 for (const l of LAYERS) {
   for (const k of ["name", "tech", "oneLine", "more"]) {
@@ -86,7 +91,7 @@ for (const l of LAYERS) {
 const appIds = new Set();
 for (const a of APPS) {
   const w = `app ${a.id}`;
-  ok(/^[a-zA-Z]{2,12}$/.test(a.id), w, "id must be 2 to 12 letters");
+  ok(/^[a-z]{2,12}$/.test(a.id), w, "id must be 2 to 12 lowercase letters");
   ok(!appIds.has(a.id), w, "id used twice");
   appIds.add(a.id);
   ok(["live", "soon"].includes(a.status), w, "status must be live or soon");
@@ -101,21 +106,29 @@ for (const id of Object.keys(APP_CONTENT)) ok(appIds.has(id), `APP_CONTENT ${id}
 
 // ---------------------------------------------------------------- 2. Foodzy app and restaurants
 section("2. Foodzy app and restaurants");
-const T = APP_CONTENT.Foodzy;
+const T = APP_CONTENT.foodzy;
 const { app, restaurants, journeys } = T;
-ok(app.id === "Foodzy", "Foodzy", "app.id must be Foodzy");
-ok(/\.example$/.test(app.domain), "Foodzy", "domain must end in .example (a reserved, made-up domain)");
+ok(app.id === "foodzy", "foodzy", "app.id must be foodzy");
+ok(/\.example$/.test(app.domain), "foodzy", "domain must end in .example (a reserved, made-up domain)");
 for (const k of ["name", "tagline", "riderName", "offerBanner", "payment"]) {
-  if (!isStr(app[k])) fail("Foodzy", `${k} missing`);
-  else checkText("Foodzy", k, app[k], { max: 60 });
+  if (!isStr(app[k])) fail("foodzy", `${k} missing`);
+  else checkText("foodzy", k, app[k], { max: 60 });
 }
 for (const k of ["firstName", "area", "address"]) {
-  if (!isStr(app.user?.[k])) fail("Foodzy.user", `${k} missing`);
-  else checkText("Foodzy.user", k, app.user[k], { max: 60 });
+  if (!isStr(app.user?.[k])) fail("foodzy.user", `${k} missing`);
+  else checkText("foodzy.user", k, app.user[k], { max: 60 });
 }
-ok(same(placeholders(app.offerBanner), ["freeAbove"]), "Foodzy", "offerBanner must use only {freeAbove}");
-for (const k of ["delivery", "freeDeliveryAbove", "platform", "gstPercent"]) ok(isInt(app.fees[k]) && app.fees[k] >= 0, "Foodzy.fees", `${k} must be a whole number`);
-ok(isStr(app.orders.prefix) && isInt(app.orders.start), "Foodzy.orders", "prefix and start required");
+ok(same(placeholders(app.offerBanner), ["freeAbove"]), "foodzy", "offerBanner must use only {freeAbove}");
+for (const k of ["delivery", "freeDeliveryAbove", "platform", "gstPercent"]) ok(isInt(app.fees[k]) && app.fees[k] >= 0, "foodzy.fees", `${k} must be a whole number`);
+ok(isStr(app.orders.prefix) && isInt(app.orders.start), "foodzy.orders", "prefix and start required");
+const routeIds = new Set();
+for (const r of app.api || []) {
+  ok(/^[a-z]{2,12}$/.test(r.id) && !routeIds.has(r.id), "foodzy.api", `route id ${r.id} must be 2 to 12 lowercase letters and unique`);
+  routeIds.add(r.id);
+  ok(["GET", "POST", "PUT", "DELETE", "WS"].includes(r.method), "foodzy.api", `route ${r.id} has an unknown method`);
+  ok(isStr(r.path) && r.path.length <= 28, "foodzy.api", `route ${r.id} path missing or over 28 characters`);
+}
+ok(routeIds.size >= 1, "foodzy.api", "needs at least one route");
 
 const shopIds = new Set();
 const itemIds = new Set();
@@ -133,7 +146,7 @@ for (const r of restaurants) {
   ok(isInt(r.etaMin) && r.etaMin >= 10 && r.etaMin <= 60, w, "etaMin must be 10 to 60");
   ok(isInt(r.priceForTwo) && r.priceForTwo > 0, w, "priceForTwo must be a whole number");
   ok(typeof r.pureVeg === "boolean", w, "pureVeg must be true or false");
-  ok(/^[a-z0-9-]+\.(jpg|webp|png)$/.test(r.image), w, "image must be a lowercase file name ending .jpg, .webp or .png");
+  ok(/^[a-z0-9-]+\.jpg$/.test(r.image), w, "image must be a lowercase file name ending .jpg");
   ok(r.menu.length >= 4 && r.menu.length <= 8, w, "menu needs 4 to 8 dishes");
   ok(r.menu.some((m) => m.bestseller), w, "needs at least one bestseller");
   for (const m of r.menu) {
@@ -146,27 +159,28 @@ for (const r of restaurants) {
     if (!isStr(m.desc)) fail(wm, "desc missing");
     else checkText(wm, "desc", m.desc, { max: 70 });
     ok(isInt(m.price) && m.price >= 10 && m.price <= 2000, wm, "price must be a whole number from 10 to 2000");
+    ok(m.image === `${m.id}.jpg`, wm, `image must be "${m.id}.jpg"`);
     ok(typeof m.veg === "boolean" && typeof m.bestseller === "boolean", wm, "veg and bestseller must be true or false");
     if (r.pureVeg) ok(m.veg === true, wm, "a pure veg restaurant can only have veg dishes");
   }
 }
 for (const c of app.categories) {
-  checkText("Foodzy.categories", c, c, { max: 16 });
-  ok(search(restaurants, c, CONFIG.limits.searchMinChars).results.length >= 1, "Foodzy.categories", `"${c}" finds no restaurant`);
+  checkText("foodzy.categories", c, c, { max: 16 });
+  ok(search(restaurants, c, CONFIG.limits.searchMinChars).results.length >= 1, "foodzy.categories", `"${c}" finds no restaurant`);
 }
 let demoShop = null;
 for (const d of app.demoCart) {
   const shop = restaurants.find((r) => r.menu.some((m) => m.id === d.itemId));
-  ok(Boolean(shop), "Foodzy.demoCart", `${d.itemId} does not exist`);
+  ok(Boolean(shop), "foodzy.demoCart", `${d.itemId} does not exist`);
   if (shop) {
-    if (demoShop && demoShop !== shop.id) fail("Foodzy.demoCart", "dishes must come from one restaurant");
+    if (demoShop && demoShop !== shop.id) fail("foodzy.demoCart", "dishes must come from one restaurant");
     demoShop = shop.id;
   }
-  ok(isInt(d.qty) && d.qty >= 1, "Foodzy.demoCart", "qty must be 1 or more");
+  ok(isInt(d.qty) && d.qty >= 1, "foodzy.demoCart", "qty must be 1 or more");
 }
 for (const o of app.seedOrders) {
-  ok(/^[A-Z]{2}-\d{5}$/.test(o.id) && isInt(o.total) && isStr(o.shop) && isStr(o.status), "Foodzy.seedOrders", `bad row ${o.id}`);
-  ok(restaurants.some((r) => r.name === o.shop), "Foodzy.seedOrders", `${o.id} names an unknown restaurant`);
+  ok(/^[A-Z]{2}-\d{5}$/.test(o.id) && isInt(o.total) && isStr(o.shop) && isStr(o.status), "foodzy.seedOrders", `bad row ${o.id}`);
+  ok(restaurants.some((r) => r.name === o.shop), "foodzy.seedOrders", `${o.id} names an unknown restaurant`);
 }
 
 // ---------------------------------------------------------------- 3. Journeys
@@ -201,9 +215,21 @@ for (const j of journeys) {
     if (!isStr(s.say)) fail(ws, "say missing");
     else checkText(ws, "say", s.say, { max: 160 });
     ok(LANGS.includes(s.code?.lang), ws, `code.lang must be one of ${LANGS.join(", ")}`);
-    ok(Array.isArray(s.code?.lines) && s.code.lines.length >= 1 && s.code.lines.length <= 5, ws, "code needs 1 to 5 lines");
+    ok(Array.isArray(s.code?.lines) && s.code.lines.length >= 3 && s.code.lines.length <= 14, ws, "code needs 3 to 14 lines");
+    const file = s.code?.file;
+    const FILE_RULES = {
+      screen: (f) => /^public\/[a-z0-9-]+\.html$/.test(f),
+      styling: (f) => /^public\/styles\/[a-z0-9-]+\.css$/.test(f),
+      logic: (f) => /^public\/js\/[a-z0-9-]+\.js$/.test(f),
+      server: (f) => /^server\/[a-z0-9/-]+\.js$/.test(f) || (f === "HTTP response" && s.code.lang === "http"),
+      database: (f) => /^db\/[a-z0-9-]+\.sql$/.test(f)
+    };
+    ok(typeof file === "string" && FILE_RULES[s.layer] && FILE_RULES[s.layer](file), ws, `code.file "${file}" does not fit the ${s.layer} layer (see SCHEMA.md)`);
+    const LANG_FOR = { screen: ["html"], styling: ["css"], logic: ["js"], server: ["js", "http"], database: ["sql"] };
+    ok(LANG_FOR[s.layer] && LANG_FOR[s.layer].includes(s.code?.lang), ws, `code.lang ${s.code?.lang} does not fit the ${s.layer} layer`);
+    ok(s.code.lines[0].trim() !== "" && s.code.lines[s.code.lines.length - 1].trim() !== "", ws, "code must not start or end with a blank line");
     for (const line of s.code.lines) {
-      ok(typeof line === "string" && line.length <= 60, ws, `code line over 60 characters: ${line}`);
+      ok(typeof line === "string" && line.length <= 64, ws, `code line over 64 characters: ${line}`);
       ok(!/\$\{[a-zA-Z][a-zA-Z0-9]*\}/.test(line), ws, `code uses \${...}, which would be filled as a placeholder: ${line}`);
       ok(!DASHES.test(line) && !EMOJI.test(line), ws, `code line has a long dash or emoji: ${line}`);
     }
@@ -215,7 +241,11 @@ for (const j of journeys) {
     if (s.layer === "server") {
       if (!isStr(s.log)) fail(ws, "server steps need a log line");
       else checkText(ws, "log", s.log, { max: 44 });
-    } else ok(s.log === undefined, ws, "only server steps have a log line");
+      ok(routeIds.has(s.route), ws, `server steps need a route from app.api (got ${s.route})`);
+    } else {
+      ok(s.log === undefined, ws, "only server steps have a log line");
+      ok(s.route === undefined, ws, "only server steps have a route");
+    }
     if (s.layer === "database") {
       const d = s.db;
       ok(d && ["restaurants", "orders"].includes(d.table), ws, "db.table must be restaurants or orders");
@@ -246,7 +276,7 @@ for (const j of journeys) {
       const all = JSON.stringify([s.say, s.code.lines, s.packet.data, s.log, s.db]);
       ok(placeholdersDeep(all).length === 0, `step ${s.id}`, "a placeholder is left after filling");
       checkText(`step ${s.id}`, "filled say", s.say, { max: 170 });
-      for (const line of s.code.lines) ok(line.length <= 64, `step ${s.id}`, `filled code line over 64 characters: ${line}`);
+      for (const line of s.code.lines) ok(line.length <= 68, `step ${s.id}`, `filled code line over 68 characters: ${line}`);
       if (s.log) ok(s.log.length <= 48, `step ${s.id}`, `filled log over 48 characters: ${s.log}`);
     }
   } catch (e) {
@@ -308,6 +338,7 @@ for (const j of journeys) {
 section("5. Settings text");
 checkText("config", "whatsAppText", CONFIG.whatsAppText, { brands: [] });
 ok(same(placeholders(CONFIG.whatsAppText).sort(), ["flows", "program"]), "config", "whatsAppText must use exactly {flows} and {program}");
+ok(CONFIG.whatsAppText.startsWith("Hi, I tried Explorer"), "config", "whatsAppText must start with \"Hi, I tried Explorer\" (UPGRADE_BRIEF.md Section 4)");
 checkText("config", "program.name", CONFIG.program.name, { brands: [] });
 ok(CONFIG.speeds.includes(CONFIG.defaultSpeed), "config", "defaultSpeed must be one of speeds");
 ok(CONFIG.salesWhatsApp === "" || /^\d{11,15}$/.test(CONFIG.salesWhatsApp), "config", "salesWhatsApp must be empty or 11 to 15 digits");
@@ -345,8 +376,8 @@ expect('search "South Indian" (category)', ids("South Indian"), ["r2", "r4"]);
 expect('search "xyz"', ids("xyz"), []);
 expect('search "b" is not active', search(restaurants, "b", CONFIG.limits.searchMinChars).active, false);
 expect('search "coffee" dishes', search(restaurants, "coffee").results.map((r) => r.dishes), [["r3i4"], ["r2i5"]]);
-expect("order number 1", orderId(1, app.orders), "TH-52001");
-expect("order number 12", orderId(12, app.orders), "TH-52012");
+expect("order number 1", orderId(1, app.orders), "FZ-52001");
+expect("order number 12", orderId(12, app.orders), "FZ-52012");
 expect("tracking minutes for 32", trackingEta(32), 19);
 expect("tracking minutes for 18", trackingEta(18), 11);
 expect("tracking minutes for 5", trackingEta(5), 4);
@@ -366,9 +397,26 @@ expect("journey ms at 0.5x", journeys.map((j) => totalMs(j, 0.5)), [16000, 35200
 expect("order hops (layer index per step)", hops(J.order, LAYERS).map((h) => h.to), [0, 2, 3, 3, 4, 3, 2, 1, 0]);
 expect("order travel ms at 1x", hops(J.order, LAYERS).map((h) => travelMs(h.distance, 1)), [0, 460, 340, 0, 340, 340, 340, 340, 340]);
 const orderSteps = prepare(J.order, LAYERS, J.order.demoValues, 1);
-expect("order step 9 text", orderSteps[8].say, "Order TH-52001 is placed. Marina Biryani Co. is cooking, and it should reach you in about 32 minutes.");
-expect("order step 5 database row", orderSteps[4].db.row, ["TH-52001", "Marina Biryani Co.", 388, "PLACED"]);
+expect("order step 9 text", orderSteps[8].say, "Order FZ-52001 is placed. Marina Biryani Co. is cooking, and it should reach you in about 32 minutes.");
+expect("order step 5 database row", orderSteps[4].db.row, ["FZ-52001", "Marina Biryani Co.", 388, "PLACED"]);
 expect("order step 3 packet", orderSteps[2].packet.data, { loggedIn: true, shopOpen: true, total: 388 });
+expect("cart bar after adding r1i1 (item total, not To pay)", cartBarLabel(demoAddCart, data, t), "1 item, ₹289");
+expect("cart bar for the demo cart", cartBarLabel(cartFrom(restaurants, app.demoCart), data, t), "2 items, ₹328");
+const latest = latestCodeByLayer(orderSteps, LAYERS, orderSteps.length - 1);
+expect("order flow: latest code file per layer", LAYERS.map((l) => latest[l.id] && latest[l.id].code.file), ["public/order.html", "public/styles/order.css", "public/js/checkout.js", "server/routes/orders.js", "db/orders.sql"]);
+const latest4 = latestCodeByLayer(orderSteps, LAYERS, 3);
+expect("order flow after step 4: layers reached", LAYERS.map((l) => latest4[l.id] ? latest4[l.id].id : null), ["order-1", null, "order-2", "order-4", null]);
+const geo = (w, h) => { const g = rowGeometry(w, h); return [layoutFor(w, h), g.compact, g.rowHeight, g.phoneScale, g.screenWidth, g.cardWidth]; };
+expect("layout 1920 x 1080", geo(1920, 1080), ["laptop", false, 620, 0.768, 276, 301]);
+expect("layout 1536 x 864", geo(1536, 864), ["laptop", false, 420, 0.505, 182, 288]);
+expect("layout 1440 x 900", geo(1440, 900), ["laptop", false, 456, 0.553, 199, 260]);
+expect("layout 1366 x 768", geo(1366, 768), ["laptop", true, 384, 0.458, 165, 250]);
+expect("layout 1024 x 768 is phone", layoutFor(1024, 768), "phone");
+expect("layout 1100 x 660 is phone (cards too narrow)", layoutFor(1100, 660), "phone");
+expect("layout 390 x 844 is phone", layoutFor(390, 844), "phone");
+expect("flat phone scale 1536 x 864 laptop", flatPhoneScale(1536, 864, "laptop"), 0.926);
+expect("flat phone scale 390 x 844 phone", flatPhoneScale(390, 844, "phone"), 0.994);
+expect("code lines per step [add, search, order, track]", journeys.map((j) => j.steps.reduce((n, st) => n + st.code.lines.length, 0)), [40, 87, 102, 68]);
 
 // ---------------------------------------------------------------- Result
 console.log(`\n${passes} checks passed, ${failures} failed.`);

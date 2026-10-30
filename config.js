@@ -3,7 +3,7 @@
 // Used by almost every file through js/content.js and js/links.js.
 
 export const CONFIG = {
-  version: "1.0.0",
+  version: "2.0.0",
 
   // The live address. Set in Phase 6 (deploy). Used for share links and link previews.
   siteUrl: "https://explorer-mu-nine.vercel.app",
@@ -49,6 +49,8 @@ export const CONFIG = {
     presenterMode: true,
     shareImage: true,
     doItForMe: true,
-    autoPlay: true
+    autoPlay: true,
+    tryItYourself: true,
+    allCode: true
   }
 };

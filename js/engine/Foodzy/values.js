@@ -22,9 +22,11 @@ export function journeyValues(journeyId, ctx, data, t) {
     const found = findItem(restaurants, ctx.itemId);
     const b = bill(ctx.cart, restaurants, app.fees);
     const n = itemCount(ctx.cart);
+    // The cart bar always shows the ITEM total (not "To pay"), the same as cartBarLabel() below.
     return {
       itemId: ctx.itemId,
       itemName: found.item.name,
+      priceLabel: formatINR(found.item.price),
       cartCount: n,
       cartLabel: t("cart.bar", { n, total: formatINR(b.itemTotal) })
     };
@@ -67,4 +69,11 @@ export function journeyValues(journeyId, ctx, data, t) {
   }
 
   throw new Error(`Unknown journey "${journeyId}"`);
+}
+
+// The words on the cart bar: "1 item, ₹289". Uses the ITEM total, never "To pay".
+// The cart bar on screen and the Add to cart flow must both use this, so they always agree.
+export function cartBarLabel(cart, data, t) {
+  const b = bill(cart, data.restaurants, data.app.fees);
+  return t("cart.bar", { n: itemCount(cart), total: formatINR(b.itemTotal) });
 }
