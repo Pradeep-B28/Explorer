@@ -11,6 +11,8 @@
   <link rel="stylesheet" href="styles/tokens.css">
   <link rel="stylesheet" href="styles/base.css">
   <link rel="stylesheet" href="styles/site.css">
+  <link rel="stylesheet" href="styles/phone.css">
+  <link rel="stylesheet" href="styles/Foodzy.css">
 </head>
 <body>
   <header class="site-header">
@@ -104,6 +106,8 @@
         const root = document.getElementById("app-root");
         if (root) mod.renderSelfTestDOM(root);
       });
+    } else {
+      import("./js/main.js");
     }
 
     if (toggleBtn) {
