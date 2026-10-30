@@ -1,49 +1,51 @@
-// App stage screen rendering the header, 3D exploded stack, phone frame, and panel.
-// Uses ui/phone.js, ui/exploded.js, apps/registry.js, content.js, and copy.js.
+// App stage screen rendering the header, split view on laptop, phone frame, and dock.
+// Uses ui/phone.js, ui/split.js, apps/registry.js, content.js, and copy.js.
 // Used by main.js and router.
 
 import { getApp, getLayers } from "../content.js";
 import { t } from "../copy.js";
 import { getAppModule } from "../apps/registry.js";
 import { createPhoneFrame } from "../ui/phone.js";
-import { createExplodedStack } from "../ui/exploded.js";
-import { createPanel } from "../ui/panel.js";
+import { createSplitView } from "../ui/split.js";
 import { createShareButton } from "../ui/share.js";
+import { ICONS, getIconSvg } from "../ui/icons.js";
 import { emit } from "../events.js";
+import { layoutFor } from "../engine/layout.js";
 
-const BACK_ARROW_SVG = `
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <line x1="19" y1="12" x2="5" y2="12"/>
-    <polyline points="12 19 5 12 12 5"/>
-  </svg>
-`;
-
-export function mount(container, { appId = "Foodzy" }) {
+export function mount(container, { appId = "foodzy" }) {
   const root = document.createElement("div");
   root.className = "stage-screen-layout";
 
   const appMeta = getApp(appId) || { id: appId, name: appId };
   const appModule = getAppModule(appId);
 
-  // Stage Header
+  // 1. Stage Header (Section 12: 64px, Explorer wordmark, All apps, App name, Share, 40px theme button)
   const header = document.createElement("header");
   header.className = "stage-header";
 
   const headerLeft = document.createElement("div");
   headerLeft.className = "stage-header-left";
 
+  const wordmark = document.createElement("a");
+  wordmark.href = "#/";
+  wordmark.className = "stage-wordmark";
+  wordmark.setAttribute("aria-label", "Explorer Home");
+  wordmark.innerHTML = `${ICONS.splitLayers} <span>Explorer</span>`;
+  headerLeft.appendChild(wordmark);
+
   const backLink = document.createElement("a");
   backLink.href = "#/";
   backLink.className = "stage-back-link";
-  backLink.innerHTML = `${BACK_ARROW_SVG} <span>${t("stage.back")}</span>`;
+  backLink.innerHTML = `${getIconSvg("back", 16)} <span>${t("stage.back")}</span>`;
   backLink.setAttribute("aria-label", t("stage.back"));
+  headerLeft.appendChild(backLink);
 
-  const titleEl = document.createElement("h1");
+  const titleEl = document.createElement("span");
   titleEl.className = "stage-app-title";
   titleEl.textContent = appMeta.name;
-
-  headerLeft.appendChild(backLink);
   headerLeft.appendChild(titleEl);
+
+  header.appendChild(headerLeft);
 
   const headerRight = document.createElement("div");
   headerRight.className = "stage-header-right";
@@ -51,11 +53,21 @@ export function mount(container, { appId = "Foodzy" }) {
   const shareBtn = createShareButton({ className: "stage-share-btn" });
   headerRight.appendChild(shareBtn);
 
+  // 40px theme icon button (sun/moon)
   const themeBtn = document.createElement("button");
   themeBtn.type = "button";
-  themeBtn.className = "theme-toggle-btn stage-theme-btn";
-  const currentTheme = document.documentElement.getAttribute("data-theme") || "light";
-  themeBtn.textContent = currentTheme === "dark" ? t("theme.toLight") : t("theme.toDark");
+  themeBtn.className = "stage-theme-btn";
+
+  function updateThemeIcon() {
+    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    const label = isDark ? t("theme.toLight") : t("theme.toDark");
+    themeBtn.setAttribute("aria-label", label);
+    themeBtn.setAttribute("title", label);
+    themeBtn.innerHTML = isDark ? getIconSvg("sun", 20) : getIconSvg("moon", 20);
+  }
+
+  updateThemeIcon();
+
   themeBtn.addEventListener("click", () => {
     const isDark = document.documentElement.getAttribute("data-theme") === "dark";
     const next = isDark ? "light" : "dark";
@@ -63,67 +75,26 @@ export function mount(container, { appId = "Foodzy" }) {
     try {
       localStorage.setItem("tea-theme", next);
     } catch (e) {}
-    themeBtn.textContent = next === "dark" ? t("theme.toLight") : t("theme.toDark");
+    updateThemeIcon();
   });
 
   headerRight.appendChild(themeBtn);
-  header.appendChild(headerLeft);
   header.appendChild(headerRight);
   root.appendChild(header);
 
-  // Stage Main Body
-  const body = document.createElement("div");
-  body.className = "stage-body";
-
-  // Left Column: Stage area holding the 3D Exploded Stack
-  const stageCol = document.createElement("div");
-  stageCol.className = "stage-col";
-
+  // 2. Main phone frame & Split View
   const phoneObj = createPhoneFrame();
-  const explodedStack = createExplodedStack(phoneObj, phoneObj.screenElement);
-  stageCol.appendChild(explodedStack.element);
 
-  // Expose on window for testing
-  window.__explodedStack = explodedStack;
-
-  // Mount the app into phone screen
+  // Mount the app (Foodzy) into phone screen
   let appInstance = null;
   if (appModule && typeof appModule.mount === "function") {
     appInstance = appModule.mount(phoneObj.screenElement);
   }
 
-  // Explode trigger button below the phone
-  const explodeWrap = document.createElement("div");
-  explodeWrap.className = "stage-explode-wrap";
-
-  const explodeBtn = document.createElement("button");
-  explodeBtn.type = "button";
-  explodeBtn.className = "stage-explode-btn";
-  explodeBtn.textContent = t("stage.explode");
-
-  explodeBtn.addEventListener("click", () => {
-    if (!explodedStack.isExploded) {
-      explodedStack.explode();
-      explodeBtn.textContent = t("stage.together");
-      emit("explode_open", { app: appId });
-    } else {
-      explodedStack.collapse();
-      explodeBtn.textContent = t("stage.explode");
-    }
-  });
-
-  explodeWrap.appendChild(explodeBtn);
-  stageCol.appendChild(explodeWrap);
-
-  body.appendChild(stageCol);
-
-  // Right Column: Panel
-  const panelCol = document.createElement("div");
-  panelCol.className = "stage-panel-col";
-
-  const panelObj = createPanel(panelCol, {
+  const splitView = createSplitView({
+    phoneObj,
+    phoneScreenEl: phoneObj.screenElement,
     appId,
-    explodedStack,
     onDoItForMe: (journeyId) => {
       if (appModule && typeof appModule.doItForMe === "function") {
         appModule.doItForMe(journeyId);
@@ -131,15 +102,11 @@ export function mount(container, { appId = "Foodzy" }) {
     }
   });
 
-  body.appendChild(panelCol);
-  root.appendChild(body);
+  root.appendChild(splitView.element);
 
-  // Responsive Phone & Exploded Scaling
+  // 3. Responsive resize handler
   function handleResize() {
-    const stageWidth = stageCol.clientWidth || window.innerWidth;
-    const stageHeight = Math.max(window.innerHeight - 140, 500);
-    phoneObj.updateScale(stageWidth, stageHeight);
-    explodedStack.updateScale(stageWidth, stageHeight);
+    splitView.updateGeometry(window.innerWidth, window.innerHeight);
   }
 
   window.addEventListener("resize", handleResize);
@@ -151,9 +118,8 @@ export function mount(container, { appId = "Foodzy" }) {
   return {
     unmount() {
       window.removeEventListener("resize", handleResize);
-      delete window.__explodedStack;
-      if (panelObj && typeof panelObj.unmount === "function") {
-        panelObj.unmount();
+      if (splitView && typeof splitView.unmount === "function") {
+        splitView.unmount();
       }
       if (appInstance && typeof appInstance.unmount === "function") {
         appInstance.unmount();

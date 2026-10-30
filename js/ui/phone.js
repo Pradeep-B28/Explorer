@@ -76,10 +76,19 @@ export function createPhoneFrame() {
     return scale;
   }
 
+  function setScale(scale) {
+    frame.style.transform = `scale(${scale})`;
+    frame.style.transformOrigin = "top center";
+    wrapper.style.width = `${Math.round(PHONE_WIDTH * scale)}px`;
+    wrapper.style.height = `${Math.round(PHONE_HEIGHT * scale)}px`;
+    return scale;
+  }
+
   return {
     element: wrapper,
     frameElement: frame,
     screenElement: screen,
-    updateScale
+    updateScale,
+    setScale
   };
 }

@@ -69,12 +69,6 @@
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.10), 0 4px 6px -4px rgba(0, 0, 0, 0.10);
   --shadow-xl: 0 20px 40px -12px rgba(15, 23, 42, 0.35);
 
-  /* Exploded view tokens (laptop defaults) */
-  --tilt-x: 52deg;
-  --tilt-z: -30deg;
-  --tilt-x-soft: 30deg;
-  --gap-z: 96px;
-
   /* Typography */
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -185,14 +179,4 @@
   --shadow-xl: 0 20px 40px -12px rgba(0, 0, 0, 0.40);
 }
 
-/* Phone layout overrides (under 900px) */
-@media (max-width: 899px) {
-  :root,
-  [data-theme="light"],
-  [data-theme="dark"] {
-    --tilt-x: 18deg;
-    --tilt-z: 0deg;
-    --tilt-x-soft: 18deg;
-    --gap-z: 0px;
-  }
-}
+
