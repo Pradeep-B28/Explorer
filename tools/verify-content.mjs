@@ -86,7 +86,7 @@ for (const l of LAYERS) {
 const appIds = new Set();
 for (const a of APPS) {
   const w = `app ${a.id}`;
-  ok(/^[a-z]{2,12}$/.test(a.id), w, "id must be 2 to 12 lowercase letters");
+  ok(/^[a-zA-Z]{2,12}$/.test(a.id), w, "id must be 2 to 12 letters");
   ok(!appIds.has(a.id), w, "id used twice");
   appIds.add(a.id);
   ok(["live", "soon"].includes(a.status), w, "status must be live or soon");
