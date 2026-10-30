@@ -13,15 +13,15 @@
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://explorer-mu-nine.vercel.app/">
-  <meta property="og:title" content="Explorer — Interactive 3D Full-Stack Architecture Visualizer">
-  <meta property="og:description" content="Use a real-looking food delivery app, split it open into a 3D exploded view, and watch your order travel through all 5 full stack layers.">
+  <meta property="og:title" content="Explorer — Watch an app split into its 5 full stack layers">
+  <meta property="og:description" content="Use a real-looking food delivery app, split it open, and watch your order travel through all 5 full stack layers, side by side.">
   <meta property="og:image" content="https://explorer-mu-nine.vercel.app/og-image.png">
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://explorer-mu-nine.vercel.app/">
-  <meta name="twitter:title" content="Explorer — Interactive 3D Full-Stack Architecture Visualizer">
-  <meta name="twitter:description" content="Use a real-looking food delivery app, split it open into a 3D exploded view, and watch your order travel through all 5 full stack layers.">
+  <meta name="twitter:title" content="Explorer — Watch an app split into its 5 full stack layers">
+  <meta name="twitter:description" content="Use a real-looking food delivery app, split it open, and watch your order travel through all 5 full stack layers, side by side.">
   <meta name="twitter:image" content="https://explorer-mu-nine.vercel.app/og-image.png">
 
   <link rel="modulepreload" href="js/main.js">
@@ -32,33 +32,38 @@
   <link rel="stylesheet" href="styles/base.css">
   <link rel="stylesheet" href="styles/site.css">
   <link rel="stylesheet" href="styles/phone.css">
-  <link rel="stylesheet" href="styles/split.css">
-  <link rel="stylesheet" href="styles/panel.css">
-  <link rel="stylesheet" href="styles/foodzy.css">
+  <link rel="stylesheet" href="styles/split.css" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="styles/panel.css" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="styles/foodzy.css" media="print" onload="this.media='all'">
 </head>
 <body>
   <header class="site-header">
-    <div class="site-header-bar"></div>
     <div class="site-header-inner">
       <a href="#/" class="site-logo-link" aria-label="Explorer Home">
-        <img src="assets/logo.png" alt="Wrench Wise" class="site-logo">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="4" height="16" rx="1"/><rect x="10" y="4" width="4" height="16" rx="1"/><rect x="18" y="4" width="4" height="16" rx="1"/></svg>
         <span class="site-logo-text">Explorer</span>
       </a>
-      <button type="button" id="theme-toggle" class="theme-toggle-btn">
-        <span id="theme-label">Switch to dark theme</span>
-      </button>
+      <div class="site-header-right">
+        <button type="button" id="site-share-btn" class="site-share-btn" aria-label="Share">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          <span>Share</span>
+        </button>
+        <button type="button" id="theme-toggle" class="site-theme-btn" aria-label="Switch to dark theme" title="Switch to dark theme">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
     </div>
   </header>
 
   <main class="site-main" id="app-root"></main>
 
-  <footer class="site-footer">
+  <footer class="site-footer" hidden>
     <div class="site-footer-inner">
       <p class="site-footer-line">
         Built by <a href="https://wrench-wise.com/?utm_source=exploded-app&amp;utm_medium=web-project&amp;utm_campaign=exploded-app&amp;utm_content=footer" target="_blank" rel="noopener noreferrer">Wrench Wise</a> to show what full stack developers build.
       </p>
       <p class="site-footer-disclaimer">
-        Foodzy, MPay, ChitChat and Tripz are made-up apps for learning. They are not linked to any real company.
+        Foodzy, Mpay, Chitchat and Tripz are made-up apps for learning. They are not linked to any real company.
       </p>
       <p class="site-footer-legal">
         &copy; 2026 Wrench Wise Edutech Private Limited
@@ -69,7 +74,10 @@
   <script type="module">
     // Safe theme initialization and switching (Hard Rule 5)
     const toggleBtn = document.getElementById("theme-toggle");
-    const themeLabel = document.getElementById("theme-label");
+    const shareBtn = document.getElementById("site-share-btn");
+
+    const MOON_SVG = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+    const SUN_SVG = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
 
     function getSavedTheme() {
       try {
@@ -90,10 +98,18 @@
     function applyTheme(theme) {
       if (theme === "dark") {
         document.documentElement.setAttribute("data-theme", "dark");
-        if (themeLabel) themeLabel.textContent = "Switch to light theme";
+        if (toggleBtn) {
+          toggleBtn.setAttribute("aria-label", "Switch to light theme");
+          toggleBtn.setAttribute("title", "Switch to light theme");
+          toggleBtn.innerHTML = SUN_SVG;
+        }
       } else {
         document.documentElement.setAttribute("data-theme", "light");
-        if (themeLabel) themeLabel.textContent = "Switch to dark theme";
+        if (toggleBtn) {
+          toggleBtn.setAttribute("aria-label", "Switch to dark theme");
+          toggleBtn.setAttribute("title", "Switch to dark theme");
+          toggleBtn.innerHTML = MOON_SVG;
+        }
       }
     }
 
@@ -127,6 +143,12 @@
         const nextTheme = currentTheme === "dark" ? "light" : "dark";
         applyTheme(nextTheme);
         saveTheme(nextTheme);
+      });
+    }
+
+    if (shareBtn) {
+      shareBtn.addEventListener("click", () => {
+        import("./js/ui/share.js").then((m) => m.shareSite());
       });
     }
   </script>

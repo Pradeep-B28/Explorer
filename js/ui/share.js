@@ -73,6 +73,8 @@ export function createShareButton(options = {}) {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = `btn-share ${className}`.trim();
+  btn.setAttribute("aria-label", text);
+  btn.setAttribute("title", text);
 
   if (showIcon) {
     btn.innerHTML = `${SHARE_ICON_SVG} <span>${text}</span>`;

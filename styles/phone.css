@@ -74,9 +74,9 @@
   display: none;
 }
 
-/* App Toast */
+/* App Toast (Section 12: above dock or phone controls, never under) */
 .app-toast {
-  position: absolute;
+  position: fixed;
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%) translateY(20px);
@@ -88,12 +88,28 @@
   font-size: 0.8125rem;
   font-weight: 600;
   box-shadow: var(--shadow-lg);
-  z-index: 200;
+  z-index: 1000;
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--dur-200) var(--ease), transform var(--dur-200) var(--ease);
   max-width: 90%;
   text-align: center;
+}
+
+body:has(.stage-dock) .app-toast,
+.stage-split-layout .app-toast {
+  bottom: calc(var(--dock-h, 240px) + 24px);
+}
+
+body:has(.phone-bottom-controls) .app-toast,
+.phone-layout .app-toast {
+  bottom: 72px;
+}
+
+.foodzy-screen .app-toast {
+  position: absolute;
+  bottom: 80px;
+  z-index: 100;
 }
 
 .app-toast.visible {

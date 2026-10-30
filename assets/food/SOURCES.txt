@@ -1,0 +1,45 @@
+Explorer / Foodzy Photo Sources
+================================
+All photos are realistic food photos under commercial-use open licenses (Antigravity image tool or Unsplash License).
+Unsplash License grants an irrevocable, nonexclusive, worldwide copyright license to download, copy, modify, distribute, perform, and use photos from Unsplash for free, including for commercial purposes, without attributing the photographer or Unsplash.
+
+Shops (800 x 450, < 120 KB):
+  assets/food/shops/marina-biryani.jpg: Marina Biryani Co. - Biryani handi pot on dining table (Unsplash https://unsplash.com/photos/photo-1563379091339-03b21ab4a4f8, 79880 bytes)
+  assets/food/shops/anna-nagar-tiffin.jpg: Anna Nagar Tiffin House - South Indian breakfast spread with dosa and idlis (Unsplash https://unsplash.com/photos/photo-1668236543090-82eba5ee5976, 77344 bytes)
+  assets/food/shops/filter-kaapi-stop.jpg: Filter Kaapi Stop - Fresh brewed coffee and cafe snacks on rustic table (Unsplash https://unsplash.com/photos/photo-1517256064527-09c73fc73e38, 37625 bytes)
+  assets/food/shops/pepper-lane.jpg: Pepper Lane Chettinad - Spicy Chettinad cuisine spread with curries and rice (Unsplash https://unsplash.com/photos/photo-1588166524941-3bf61a9c41db, 68417 bytes)
+  assets/food/shops/beach-road-grills.jpg: Beach Road Grills - Charcoal barbecued skewers and grilled kebabs (Unsplash https://unsplash.com/photos/photo-1555939594-58d7cb561ad1, 115305 bytes)
+  assets/food/shops/kolam-creamery.jpg: Kolam Creamery - Artisanal ice cream bowls and sweet toppings (Unsplash https://unsplash.com/photos/photo-1501443762994-82bd5dace89a, 99936 bytes)
+
+Dishes (400 x 400, < 45 KB):
+  assets/food/dishes/r1i1.jpg: Chicken Dum Biryani (Antigravity image-generator subagent, 44252 bytes)
+  assets/food/dishes/r1i2.jpg: Mutton Biryani - Fragrant layered basmati rice with mutton (Unsplash https://unsplash.com/photos/photo-1589302168068-964664d93dc0, 44356 bytes)
+  assets/food/dishes/r1i3.jpg: Veg Biryani - Saffron garden vegetable dum biryani (Unsplash https://unsplash.com/photos/photo-1633945274405-b6c8069047b0, 44667 bytes)
+  assets/food/dishes/r1i4.jpg: Chicken 65 - Crisp spicy South Indian fried chicken (Unsplash https://unsplash.com/photos/photo-1626082927389-6cd097cdc6ec, 43568 bytes)
+  assets/food/dishes/r1i5.jpg: Onion Raita - Fresh whipped yogurt dip with onions (Unsplash https://unsplash.com/photos/photo-1596797038530-2c107229654b, 44913 bytes)
+  assets/food/dishes/r1i6.jpg: Bread Halwa - Sweet rich ghee-soaked dessert with nuts (Unsplash https://unsplash.com/photos/photo-1587314168485-3236d6710814, 27342 bytes)
+  assets/food/dishes/r2i1.jpg: Ghee Roast Dosa - Crisp golden rolled dosa with chutney (Unsplash https://unsplash.com/photos/photo-1668236543090-82eba5ee5976, 36422 bytes)
+  assets/food/dishes/r2i2.jpg: Mini Idli Sambar - Steamed rice cakes served in sambar (Unsplash https://unsplash.com/photos/photo-1589301760014-d929f3979dbc, 29273 bytes)
+  assets/food/dishes/r2i3.jpg: Pongal Vada - Savory lentil rice with crispy medu vada (Unsplash https://unsplash.com/photos/photo-1601050690597-df0568f70950, 20169 bytes)
+  assets/food/dishes/r2i4.jpg: Rava Kesari - Golden semolina dessert with saffron and cashews (Unsplash https://unsplash.com/photos/photo-1599488615731-7e5c2823ff28, 38023 bytes)
+  assets/food/dishes/r2i5.jpg: Filter Coffee - Frothy traditional South Indian coffee (Unsplash https://unsplash.com/photos/photo-1514432324607-a09d9b4aefdd, 30973 bytes)
+  assets/food/dishes/r3i1.jpg: Filter Kaapi - Fresh strong filter brew (Unsplash https://unsplash.com/photos/photo-1514432324607-a09d9b4aefdd, 30973 bytes)
+  assets/food/dishes/r3i2.jpg: Masala Vada - Crunchy spiced chana dal vada (Unsplash https://unsplash.com/photos/photo-1601050690597-df0568f70950, 20169 bytes)
+  assets/food/dishes/r3i3.jpg: Onion Bajji - Golden spiced onion fritters (Unsplash https://unsplash.com/photos/photo-1601050690597-df0568f70950, 20169 bytes)
+  assets/food/dishes/r3i4.jpg: Sukku Coffee - Herbal dried ginger beverage (Unsplash https://unsplash.com/photos/photo-1517256064527-09c73fc73e38, 18361 bytes)
+  assets/food/dishes/r3i5.jpg: Elaneer Payasam - Tender coconut kheer dessert (Unsplash https://unsplash.com/photos/photo-1505252585461-04db1eb84625, 31157 bytes)
+  assets/food/dishes/r4i1.jpg: Pepper Chicken - Dry roasted chicken in cracked black pepper (Unsplash https://unsplash.com/photos/photo-1626777552726-4a6b54c97e46, 44439 bytes)
+  assets/food/dishes/r4i2.jpg: Mutton Chukka - Tender spiced mutton morsels with curry leaves (Unsplash https://unsplash.com/photos/photo-1544025162-d76694265947, 37344 bytes)
+  assets/food/dishes/r4i3.jpg: Kothu Parotta - Shredded flaky flatbread tossed on tawa (Unsplash https://unsplash.com/photos/photo-1565557623262-b51c2513a641, 31318 bytes)
+  assets/food/dishes/r4i4.jpg: Nattu Kozhi Rasam - Country chicken pepper broth soup (Unsplash https://unsplash.com/photos/photo-1547592166-23ac45744acd, 39085 bytes)
+  assets/food/dishes/r4i5.jpg: Parotta, 2 pieces - Flaky layered South Indian parotta (Unsplash https://unsplash.com/photos/photo-1565557623262-b51c2513a641, 31318 bytes)
+  assets/food/dishes/r5i1.jpg: Chicken Shawarma Roll - Grilled chicken wrap with garlic sauce (Unsplash https://unsplash.com/photos/photo-1529006557810-274b9b2fc783, 33135 bytes)
+  assets/food/dishes/r5i2.jpg: Grilled Chicken Half - Charcoal grilled chicken with herbs (Unsplash https://unsplash.com/photos/photo-1598515214211-89d3c73ae83b, 41045 bytes)
+  assets/food/dishes/r5i3.jpg: Falafel Wrap - Crisp falafel patties wrapped with greens (Unsplash https://unsplash.com/photos/photo-1603048588665-791ca8aea617, 14610 bytes)
+  assets/food/dishes/r5i4.jpg: Hummus with Pita - Creamy chickpea dip with warm pita (Unsplash https://unsplash.com/photos/photo-1540420773420-3366772f4999, 44846 bytes)
+  assets/food/dishes/r5i5.jpg: Mint Lime Soda - Chilled sparkling lime soda with mint (Unsplash https://unsplash.com/photos/photo-1513558161293-cdaf765ed2fd, 23760 bytes)
+  assets/food/dishes/r6i1.jpg: Jigarthanda - Madurai milk cooler with ice cream and almond gum (Unsplash https://unsplash.com/photos/photo-1550583724-b2692b85b150, 18562 bytes)
+  assets/food/dishes/r6i2.jpg: Tender Coconut Ice Cream - Pure tender coconut cream scoops (Unsplash https://unsplash.com/photos/photo-1497034825429-c343d7c6a68f, 15451 bytes)
+  assets/food/dishes/r6i3.jpg: Gulab Jamun, 2 pieces - Warm sweet syrup-soaked milk dumplings (Unsplash https://unsplash.com/photos/photo-1601050690117-94f5f6fa8bd7, 24750 bytes)
+  assets/food/dishes/r6i4.jpg: Brownie Sundae - Warm fudge brownie with vanilla ice cream (Unsplash https://unsplash.com/photos/photo-1606313564200-e75d5e30476c, 27465 bytes)
+  assets/food/dishes/r6i5.jpg: Badam Milk - Chilled almond milk with saffron (Unsplash https://unsplash.com/photos/photo-1550583724-b2692b85b150, 18562 bytes)

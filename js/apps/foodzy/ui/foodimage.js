@@ -55,9 +55,14 @@ export function createRestaurantImage(restaurant, index = 0) {
 
   if (restaurant.image) {
     const img = document.createElement("img");
-    img.src = `assets/food/${restaurant.image}`;
+    img.src = `assets/food/shops/${restaurant.image}`;
     img.alt = restaurant.name;
-    img.loading = "lazy";
+    if (index === 0) {
+      img.fetchPriority = "high";
+      img.loading = "eager";
+    } else {
+      img.loading = "lazy";
+    }
     img.decoding = "async";
     img.className = "restaurant-img";
 
@@ -76,13 +81,33 @@ export function createRestaurantImage(restaurant, index = 0) {
 }
 
 /**
- * Creates a drawn dish thumbnail with veg or non-veg tint and plate icon.
- * @param {boolean} isVeg
+ * Creates a dish thumbnail (photo with fallback plate SVG).
+ * @param {object|boolean} dishOrVeg Dish object or veg boolean
  * @returns {HTMLElement}
  */
-export function createDishThumbnail(isVeg) {
+export function createDishThumbnail(dishOrVeg) {
+  const isVeg = typeof dishOrVeg === "object" && dishOrVeg !== null ? Boolean(dishOrVeg.veg) : Boolean(dishOrVeg);
+  const dish = typeof dishOrVeg === "object" && dishOrVeg !== null ? dishOrVeg : null;
   const thumb = document.createElement("div");
   thumb.className = `dish-thumbnail ${isVeg ? "veg" : "non-veg"}`;
-  thumb.innerHTML = PLATE_SVG;
+
+  if (dish && dish.image) {
+    const img = document.createElement("img");
+    img.src = `assets/food/dishes/${dish.image}`;
+    img.alt = dish.name || "Dish";
+    img.loading = "lazy";
+    img.decoding = "async";
+    img.className = "dish-img";
+
+    img.onerror = () => {
+      img.remove();
+      thumb.innerHTML = PLATE_SVG;
+    };
+
+    thumb.appendChild(img);
+  } else {
+    thumb.innerHTML = PLATE_SVG;
+  }
+
   return thumb;
 }

@@ -27,7 +27,7 @@ export function createRestaurantCard({ restaurant, index = 0, matchedDishIds = n
   card.dataset.restaurantId = restaurant.id;
   card.tabIndex = 0;
   card.setAttribute("role", "button");
-  card.setAttribute("aria-label", `${restaurant.name}, ${restaurant.cuisine}`);
+  card.setAttribute("aria-label", restaurant.name);
 
   card.addEventListener("click", () => onClick(restaurant.id));
   card.addEventListener("keydown", (e) => {

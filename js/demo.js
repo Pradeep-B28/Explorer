@@ -76,7 +76,7 @@ export function initDemoMode() {
   // 5. Flow lesson for 2s
   // 6. Final CTA card stays
   setTimeout(() => {
-    const explodeBtn = document.querySelector(".stage-explode-btn");
+    const explodeBtn = document.querySelector(".flat-split-btn, .phone-split-btn, .stage-explode-btn");
     if (explodeBtn) {
       explodeBtn.classList.add("btn-pressed");
       setTimeout(() => {
@@ -93,18 +93,43 @@ export function initDemoMode() {
 }
 
 function runFlowSequence(flows, index) {
-  if (index >= flows.length) return;
+  if (index >= flows.length) {
+    if (typeof window !== "undefined") window.__DEMO_DONE__ = true;
+    return;
+  }
 
   const flowId = flows[index];
   const allJourneys = getJourneys("Foodzy");
   const journey = allJourneys.find((j) => j.id === flowId);
   if (!journey) return;
 
+  const params = new URLSearchParams(window.location.search);
+  const speedParam = parseFloat(params.get("speed"));
+
   // Trigger Do It For Me
-  const doitBtns = document.querySelectorAll(".panel-doit-btn");
+  const doitBtns = Array.from(document.querySelectorAll(".dock-flow-btn-doit, .phone-flow-do-btn, .panel-doit-btn"));
   const flowIndex = allJourneys.findIndex((j) => j.id === flowId);
   if (doitBtns[flowIndex]) {
     doitBtns[flowIndex].click();
+  } else {
+    // If buttons not yet in DOM or direct call needed
+    import("./apps/foodzy/index.js").then((mod) => {
+      if (mod && typeof mod.doItForMe === "function") {
+        mod.doItForMe(flowId);
+      }
+    });
+  }
+
+  // Apply speed if specified
+  if (speedParam && !isNaN(speedParam)) {
+    setTimeout(() => {
+      const speedBtns = document.querySelectorAll(".dock-speed-btn, .phone-speed-btn");
+      speedBtns.forEach((b) => {
+        if (b.textContent.trim() === `${speedParam}x`) {
+          b.click();
+        }
+      });
+    }, 200);
   }
 
   // Listen for flow complete
@@ -115,11 +140,13 @@ function runFlowSequence(flows, index) {
     setTimeout(() => {
       if (index + 1 < flows.length) {
         // More flows to run: wait 1s between flows
-        const tryAnotherBtn = document.querySelector(".panel-try-another-btn");
+        const tryAnotherBtn = document.querySelector(".dock-try-another-btn, .btn-try-another, .panel-try-another-btn");
         if (tryAnotherBtn) tryAnotherBtn.click();
         setTimeout(() => {
           runFlowSequence(flows, index + 1);
         }, 1000);
+      } else {
+        if (typeof window !== "undefined") window.__DEMO_DONE__ = true;
       }
     }, 2000);
   };
@@ -142,7 +169,7 @@ export function initPresenterMode() {
 
     const key = e.key;
     const allJourneys = getJourneys("Foodzy");
-    const doitBtns = document.querySelectorAll(".panel-doit-btn");
+    const doitBtns = Array.from(document.querySelectorAll(".dock-flow-btn-doit, .phone-flow-do-btn, .panel-doit-btn"));
 
     if (["1", "2", "3", "4"].includes(key)) {
       const idx = parseInt(key, 10) - 1;

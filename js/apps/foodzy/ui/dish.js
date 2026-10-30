@@ -69,7 +69,7 @@ export function createDishRow({ dish, qty = 0, onAdd, onRemove }) {
   const right = document.createElement("div");
   right.className = "dish-item-action";
 
-  const thumb = createDishThumbnail(dish.veg);
+  const thumb = createDishThumbnail(dish);
   right.appendChild(thumb);
 
   const btnContainer = document.createElement("div");

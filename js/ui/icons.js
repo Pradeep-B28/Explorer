@@ -19,6 +19,7 @@ export const ICONS = {
   tripz: `<svg ${SVG_ATTRS}><rect x="4" y="3" width="16" height="15" rx="3"/><circle cx="7.5" cy="15.5" r="1.5"/><circle cx="16.5" cy="15.5" r="1.5"/><path d="M4 10h16M7 21l1-3m9 3-1-3"/></svg>`,
 
   // Utility & controls
+  check: `<svg ${SVG_ATTRS}><polyline points="20 6 9 17 4 12"/></svg>`,
   cloud: `<svg ${SVG_ATTRS}><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>`,
   lock: `<svg ${SVG_ATTRS}><rect x="4" y="11" width="16" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
   copy: `<svg ${SVG_ATTRS}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,

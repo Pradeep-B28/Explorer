@@ -15,7 +15,9 @@ export function initAnalytics() {
   const isExcluded =
     urlParams.get("test") === "1" ||
     urlParams.get("demo") === "1" ||
-    urlParams.get("present") === "1";
+    urlParams.get("present") === "1" ||
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1";
 
   if (isExcluded) return;
 

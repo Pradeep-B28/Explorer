@@ -45,6 +45,11 @@
 
 /* Home Screen: Location Row */
 .foodzy-loc-row {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -201,7 +206,7 @@
 .restaurant-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 14px;
   overflow: hidden;
   box-shadow: var(--shadow-sm);
   cursor: pointer;
@@ -391,13 +396,14 @@
 }
 
 .dish-bestseller-tag {
-  background: #FEF3C7;
-  color: #B45309;
+  background: var(--foodzy-soft);
+  color: var(--foodzy-strong);
   font-size: 0.625rem;
   font-weight: 800;
-  padding: 1px 5px;
+  padding: 1px 6px;
   border-radius: 4px;
   text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .dish-name {
@@ -409,7 +415,7 @@
 
 .dish-price {
   font-size: 0.8125rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text);
 }
 
@@ -438,6 +444,15 @@
   align-items: center;
   justify-content: center;
   background: var(--surface-2);
+  overflow: hidden;
+  position: relative;
+}
+
+.dish-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .dish-thumbnail.veg {

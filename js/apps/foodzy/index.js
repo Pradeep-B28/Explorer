@@ -233,3 +233,8 @@ export function stateLine() {
   }
   return `screen: ${screen}`;
 }
+
+if (typeof window !== "undefined") {
+  window.__foodzyState = window.__foodzyState || {};
+  window.__foodzyState.stateSnapshot = stateSnapshot;
+}

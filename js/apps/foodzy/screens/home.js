@@ -164,9 +164,10 @@ export function mount(container, ctx = {}) {
   banner.className = "foodzy-offer-banner";
   banner.tabIndex = 0;
   banner.setAttribute("role", "button");
-  banner.setAttribute("aria-label", "Special offer banner");
   const freeAboveStr = formatINR(app.fees.freeDeliveryAbove);
-  banner.textContent = fillText(app.offerBanner, { freeAbove: freeAboveStr });
+  const bannerText = fillText(app.offerBanner, { freeAbove: freeAboveStr });
+  banner.textContent = bannerText;
+  banner.setAttribute("aria-label", bannerText);
   banner.addEventListener("click", () => showToast(t("demo.toast"), container));
   root.appendChild(banner);
 
