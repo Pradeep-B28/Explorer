@@ -1,0 +1,12 @@
+Optional restaurant photos for Thattu. The site works without them.
+
+File names (exactly these):
+  marina-biryani.jpg      Marina Biryani Co.
+  anna-nagar-tiffin.jpg   Anna Nagar Tiffin House
+  filter-kaapi-stop.jpg   Filter Kaapi Stop
+  pepper-lane.jpg         Pepper Lane Chettinad
+  beach-road-grills.jpg   Beach Road Grills
+  kolam-creamery.jpg      Kolam Creamery
+
+Size: 800 x 450, under 120 KB each.
+Source: Antigravity's image tool or a free stock site. Never a real restaurant's or delivery app's photo.

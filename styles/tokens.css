@@ -1,0 +1,183 @@
+/* Design tokens for Explorer (matched to wrench-wise.com) */
+/* Section 7 of PROJECT_BRIEF.md */
+
+:root,
+[data-theme="light"] {
+  /* Site tokens */
+  --bg: #FFFFFF;
+  --bg-grad: linear-gradient(135deg, #ECFDF5 0%, #FFFFFF 45%, #ECFEFF 100%);
+  --surface: #FFFFFF;
+  --surface-2: #F3F4F6;
+  --border: #E5E7EB;
+  --text: #111827;
+  --text-2: #374151;
+  --muted: #6B7280;
+  --brand: #059669;
+  --brand-strong: #047857;
+  --brand-soft: #D1FAE5;
+  --accent: #0891B2;
+  --warn: #B45309;
+  --fixed-soft: #D1FAE5;
+
+  /* Brand gradient */
+  --brand-grad: linear-gradient(90deg, #059669, #0D9488, #06B6D4);
+
+  /* Layer tokens */
+  --layer-screen: #059669;
+  --layer-styling: #7C3AED;
+  --layer-logic: #CA8A04;
+  --layer-server: #0891B2;
+  --layer-database: #4F46E5;
+  --layer-card: rgba(255, 255, 255, 0.88);
+  --beam: linear-gradient(180deg, #22D3EE, #10B981);
+
+  /* Foodzy tokens */
+  --Foodzy: #C2410C;
+  --Foodzy-strong: #9A3412;
+  --Foodzy-soft: #FFF7ED;
+  --rating: #15803D;
+  --veg: #15803D;
+  --nonveg: #B91C1C;
+  --map-land: #F5F1E8;
+  --map-road: #FFFFFF;
+
+  /* Code tokens */
+  --code-bg: #0B1220;
+  --code-gutter: #64748B;
+  --code-text: #E2E8F0;
+  --tok-comment: #64748B;
+  --tok-keyword: #67E8F9;
+  --tok-string: #FDE68A;
+  --tok-number: #FCA5A5;
+  --tok-tag: #6EE7B7;
+  --tok-attr: #FDBA74;
+  --tok-prop: #93C5FD;
+  --tok-punct: #94A3B8;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.10), 0 1px 2px -1px rgba(0, 0, 0, 0.10);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.10), 0 2px 4px -2px rgba(0, 0, 0, 0.10);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.10), 0 4px 6px -4px rgba(0, 0, 0, 0.10);
+  --shadow-xl: 0 20px 40px -12px rgba(15, 23, 42, 0.35);
+
+  /* Exploded view tokens (laptop defaults) */
+  --tilt-x: 52deg;
+  --tilt-z: -30deg;
+  --tilt-x-soft: 30deg;
+  --gap-z: 96px;
+
+  /* Typography */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Shapes */
+  --radius-pill: 999px;
+  --radius-card: 16px;
+  --radius-layer: 24px;
+  --radius-phone: 44px;
+  --radius-code: 12px;
+
+  /* Easing & Durations */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-150: 150ms;
+  --dur-200: 200ms;
+  --dur-300: 300ms;
+  --dur-500: 500ms;
+  --dur-together: 700ms;
+  --dur-explode: 900ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F172A;
+    --bg-grad: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+    --surface: #1E293B;
+    --surface-2: #334155;
+    --border: #334155;
+    --text: #F1F5F9;
+    --text-2: #CBD5E1;
+    --muted: #94A3B8;
+    --brand: #10B981;
+    --brand-strong: #34D399;
+    --brand-soft: rgba(16, 185, 129, 0.15);
+    --accent: #22D3EE;
+    --warn: #FBBF24;
+    --fixed-soft: rgba(16, 185, 129, 0.18);
+
+    --layer-screen: #34D399;
+    --layer-styling: #A78BFA;
+    --layer-logic: #FACC15;
+    --layer-server: #22D3EE;
+    --layer-database: #818CF8;
+    --layer-card: rgba(30, 41, 59, 0.88);
+
+    --Foodzy: #FB923C;
+    --Foodzy-strong: #FDBA74;
+    --Foodzy-soft: rgba(251, 146, 60, 0.14);
+    --rating: #16A34A;
+    --veg: #22C55E;
+    --nonveg: #F87171;
+    --map-land: #1E293B;
+    --map-road: #334155;
+
+    --code-bg: #050A14;
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.40), 0 1px 2px -1px rgba(0, 0, 0, 0.40);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.40), 0 2px 4px -2px rgba(0, 0, 0, 0.40);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.40), 0 4px 6px -4px rgba(0, 0, 0, 0.40);
+    --shadow-xl: 0 20px 40px -12px rgba(0, 0, 0, 0.40);
+  }
+}
+
+[data-theme="dark"] {
+  --bg: #0F172A;
+  --bg-grad: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  --surface: #1E293B;
+  --surface-2: #334155;
+  --border: #334155;
+  --text: #F1F5F9;
+  --text-2: #CBD5E1;
+  --muted: #94A3B8;
+  --brand: #10B981;
+  --brand-strong: #34D399;
+  --brand-soft: rgba(16, 185, 129, 0.15);
+  --accent: #22D3EE;
+  --warn: #FBBF24;
+  --fixed-soft: rgba(16, 185, 129, 0.18);
+
+  --layer-screen: #34D399;
+  --layer-styling: #A78BFA;
+  --layer-logic: #FACC15;
+  --layer-server: #22D3EE;
+  --layer-database: #818CF8;
+  --layer-card: rgba(30, 41, 59, 0.88);
+
+  --Foodzy: #FB923C;
+  --Foodzy-strong: #FDBA74;
+  --Foodzy-soft: rgba(251, 146, 60, 0.14);
+  --rating: #16A34A;
+  --veg: #22C55E;
+  --nonveg: #F87171;
+  --map-land: #1E293B;
+  --map-road: #334155;
+
+  --code-bg: #050A14;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.40), 0 1px 2px -1px rgba(0, 0, 0, 0.40);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.40), 0 2px 4px -2px rgba(0, 0, 0, 0.40);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.40), 0 4px 6px -4px rgba(0, 0, 0, 0.40);
+  --shadow-xl: 0 20px 40px -12px rgba(0, 0, 0, 0.40);
+}
+
+/* Phone layout overrides (under 900px) */
+@media (max-width: 899px) {
+  :root,
+  [data-theme="light"],
+  [data-theme="dark"] {
+    --tilt-x: 18deg;
+    --tilt-z: 0deg;
+    --tilt-x-soft: 18deg;
+    --gap-z: 0px;
+  }
+}

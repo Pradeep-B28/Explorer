@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Explorer</title>
+  <meta name="description" content="Use a real-looking app, then split it open and watch your order travel through every layer.">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FFFFFF">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0F172A">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/site.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-header-bar"></div>
+    <div class="site-header-inner">
+      <a href="#/" class="site-logo-link" aria-label="Explorer Home">
+        <img src="assets/logo.png" alt="Wrench Wise" class="site-logo">
+        <span class="site-logo-text">Explorer</span>
+      </a>
+      <button type="button" id="theme-toggle" class="theme-toggle-btn" aria-label="Switch theme">
+        <span id="theme-label">Switch to dark theme</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="site-main" id="app-root">
+    <div class="shell-preview-card">
+      <span class="shell-preview-eyebrow">Phase 0 Shell</span>
+      <h1 class="shell-preview-title">Explorer</h1>
+      <p class="shell-preview-desc">
+        Every app you use has 5 hidden layers. Use a real-looking app, then split it open and watch your order travel through every layer.
+      </p>
+      <p style="font-size: 0.875rem; color: var(--muted);">
+        Setup and checks complete. The shell is ready for Phase 1.
+      </p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <p class="site-footer-line">
+        Built by <a href="https://wrench-wise.com/?utm_source=exploded-app&amp;utm_medium=web-project&amp;utm_campaign=exploded-app&amp;utm_content=footer" target="_blank" rel="noopener noreferrer">Wrench Wise</a> to show what full stack developers build.
+      </p>
+      <p class="site-footer-disclaimer">
+        Foodzy, MPay, ChitChat and Tripz are made-up apps for learning. They are not linked to any real company.
+      </p>
+      <p class="site-footer-legal">
+        &copy; 2026 Wrench Wise Edutech Private Limited
+      </p>
+    </div>
+  </footer>
+
+  <script type="module">
+    // Safe theme initialization and switching (Hard Rule 5)
+    const toggleBtn = document.getElementById("theme-toggle");
+    const themeLabel = document.getElementById("theme-label");
+
+    function getSavedTheme() {
+      try {
+        return localStorage.getItem("tea-theme");
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function saveTheme(theme) {
+      try {
+        localStorage.setItem("tea-theme", theme);
+      } catch (e) {
+        // Storage blocked, do nothing
+      }
+    }
+
+    function applyTheme(theme) {
+      if (theme === "dark") {
+        document.documentElement.setAttribute("data-theme", "dark");
+        if (themeLabel) themeLabel.textContent = "Switch to light theme";
+      } else {
+        document.documentElement.setAttribute("data-theme", "light");
+        if (themeLabel) themeLabel.textContent = "Switch to dark theme";
+      }
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const themeParam = urlParams.get("theme");
+
+    if (themeParam === "dark" || themeParam === "light") {
+      applyTheme(themeParam);
+    } else {
+      const savedTheme = getSavedTheme();
+      if (savedTheme) {
+        applyTheme(savedTheme);
+      } else {
+        const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        applyTheme(prefersDark ? "dark" : "light");
+      }
+    }
+
+    if (toggleBtn) {
+      toggleBtn.addEventListener("click", () => {
+        const currentTheme = document.documentElement.getAttribute("data-theme") || "light";
+        const nextTheme = currentTheme === "dark" ? "light" : "dark";
+        applyTheme(nextTheme);
+        saveTheme(nextTheme);
+      });
+    }
+  </script>
+</body>
+</html>
