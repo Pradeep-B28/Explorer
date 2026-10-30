@@ -1,6 +1,7 @@
 // Renders the Database layer with restaurants and orders tables, supporting select, insert, and update actions.
+// UPGRADE_BRIEF.md Section 7: Database card.
 // Uses content.js for restaurant data and seedOrders, and standard DOM APIs.
-// Used by ui/exploded.js.
+// Used by ui/split.js.
 
 import { getAppContent } from "../../content.js";
 
@@ -13,9 +14,12 @@ export function createDatabaseLayer(container) {
   const root = document.createElement("div");
   root.className = "layer-database-content";
 
-  const { app, restaurants } = getAppContent("foodzy");
+  const { app, restaurants } = getAppContent("foodzy") || {};
 
-  // Tab Strip
+  // Tab Strip & Operation Chip
+  const topBar = document.createElement("div");
+  topBar.className = "db-top-bar";
+
   const tabStrip = document.createElement("div");
   tabStrip.className = "db-tab-strip";
 
@@ -23,23 +27,30 @@ export function createDatabaseLayer(container) {
   let activeTab = "restaurants";
   const tabButtons = {};
 
-  tabs.forEach(tName => {
+  tabs.forEach((tName) => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = `db-tab-btn ${tName === activeTab ? "active" : ""}`;
-    btn.textContent = `public.${tName}`;
+    btn.textContent = tName;
     btn.addEventListener("click", () => switchTab(tName));
     tabStrip.appendChild(btn);
     tabButtons[tName] = btn;
   });
+  topBar.appendChild(tabStrip);
 
-  root.appendChild(tabStrip);
+  // Operation Chip (SELECT, INSERT, UPDATE)
+  const opChip = document.createElement("div");
+  opChip.className = "db-op-chip";
+  opChip.hidden = true;
+  topBar.appendChild(opChip);
+
+  root.appendChild(topBar);
 
   // Table View Container
   const tableContainer = document.createElement("div");
   tableContainer.className = "db-table-container";
 
-  const ordersData = [...(app.seedOrders || [])];
+  const ordersData = [...(app?.seedOrders || [])];
 
   function buildRestaurantsTable() {
     const table = document.createElement("table");
@@ -47,7 +58,7 @@ export function createDatabaseLayer(container) {
 
     const thead = document.createElement("thead");
     const headerRow = document.createElement("tr");
-    ["id", "name", "rating"].forEach(col => {
+    ["id", "name", "rating"].forEach((col) => {
       const th = document.createElement("th");
       th.textContent = col;
       headerRow.appendChild(th);
@@ -56,7 +67,7 @@ export function createDatabaseLayer(container) {
     table.appendChild(thead);
 
     const tbody = document.createElement("tbody");
-    restaurants.forEach(r => {
+    (restaurants || []).forEach((r) => {
       const tr = document.createElement("tr");
       tr.setAttribute("data-row-id", r.id);
 
@@ -83,7 +94,7 @@ export function createDatabaseLayer(container) {
 
     const thead = document.createElement("thead");
     const headerRow = document.createElement("tr");
-    ["id", "shop", "total", "status"].forEach(col => {
+    ["id", "shop", "total", "status"].forEach((col) => {
       const th = document.createElement("th");
       th.textContent = col;
       headerRow.appendChild(th);
@@ -92,7 +103,7 @@ export function createDatabaseLayer(container) {
     table.appendChild(thead);
 
     const tbody = document.createElement("tbody");
-    ordersData.forEach(o => {
+    ordersData.forEach((o) => {
       const tr = document.createElement("tr");
       tr.setAttribute("data-row-id", o.id);
 
@@ -124,7 +135,7 @@ export function createDatabaseLayer(container) {
 
   function switchTab(tName) {
     activeTab = tName;
-    tabs.forEach(t => {
+    tabs.forEach((t) => {
       if (tabButtons[t]) {
         tabButtons[t].classList.toggle("active", t === activeTab);
       }
@@ -134,23 +145,31 @@ export function createDatabaseLayer(container) {
 
   /**
    * Executes a database step action (select, insert, update).
-   * @param {{ table: string, action: string, columns: string[], row: any[] }} dbAction
+   * @param {{ table: string, action: string, columns?: string[], row: any[] }} dbAction
    */
   function execute(dbAction) {
     if (!dbAction) return;
+
+    // Switch to db.table
     if (dbAction.table && dbAction.table !== activeTab) {
       switchTab(dbAction.table);
     }
+
+    // Show operation chip
+    const act = (dbAction.action || "SELECT").toUpperCase();
+    opChip.textContent = act;
+    opChip.className = `db-op-chip op-${act.toLowerCase()}`;
+    opChip.hidden = false;
 
     const tbody = tableContainer.querySelector("tbody");
     if (!tbody) return;
 
     // Clear prior highlights
-    tbody.querySelectorAll("tr").forEach(r => r.classList.remove("db-highlight-row"));
+    tbody.querySelectorAll("tr").forEach((r) => r.classList.remove("db-highlight-row"));
 
     const keyId = dbAction.row && dbAction.row[0];
 
-    if (dbAction.action === "select") {
+    if (act === "SELECT") {
       if (keyId) {
         const rowEl = tbody.querySelector(`tr[data-row-id="${keyId}"]`);
         if (rowEl) {
@@ -158,8 +177,8 @@ export function createDatabaseLayer(container) {
           rowEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }
       }
-    } else if (dbAction.action === "insert") {
-      const exists = ordersData.some(o => o.id === keyId);
+    } else if (act === "INSERT") {
+      const exists = ordersData.some((o) => o.id === keyId);
       if (!exists && dbAction.row) {
         const newOrder = {
           id: dbAction.row[0],
@@ -173,11 +192,11 @@ export function createDatabaseLayer(container) {
       const newTbody = tableContainer.querySelector("tbody");
       const newRow = newTbody ? newTbody.querySelector(`tr[data-row-id="${keyId}"]`) : null;
       if (newRow) {
-        newRow.classList.add("db-insert-flash");
+        newRow.classList.add("db-insert-slide-flash");
         newRow.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }
-    } else if (dbAction.action === "update") {
-      const target = ordersData.find(o => o.id === keyId);
+    } else if (act === "UPDATE") {
+      const target = ordersData.find((o) => o.id === keyId);
       if (target && dbAction.row) {
         target.shop = dbAction.row[1] || target.shop;
         target.total = dbAction.row[2] || target.total;
@@ -194,7 +213,8 @@ export function createDatabaseLayer(container) {
 
   function reset() {
     ordersData.length = 0;
-    ordersData.push(...(app.seedOrders || []));
+    ordersData.push(...(app?.seedOrders || []));
+    opChip.hidden = true;
     switchTab("restaurants");
   }
 

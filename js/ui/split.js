@@ -1,4 +1,4 @@
-// Manages the split view on laptop, card shells, FLIP split/assembly, bus wire, and packet.
+// Manages the split view on laptop, card shells, layer arts, FLIP split/assembly, bus wire, packet, and dock with 3 modes.
 // UPGRADE_BRIEF.md Sections 6, 7, 8, 12, 14.
 // Used by screens/stage.js.
 
@@ -11,6 +11,15 @@ import { createStylingLayer } from "./layers/styling.js";
 import { createLogicLayer } from "./layers/logic.js";
 import { createServerLayer } from "./layers/server.js";
 import { createDatabaseLayer } from "./layers/database.js";
+import { createPlayer } from "../player.js";
+import { latestCodeByLayer, layerIndex } from "../engine/journey.js";
+import { isFlowWatched, markFlowWatched, getWatchedFlows } from "../progress.js";
+import { getWhatsAppLink, getProgramLink } from "../links.js";
+import { createShareButton } from "./share.js";
+import { openAllCodeSheet } from "./allcode.js";
+import { tokenizeLine } from "./codeview.js";
+import { on, emit } from "../events.js";
+import { CONFIG } from "../../config.js";
 
 const LAYER_COLORS = {
   screen: "var(--layer-screen)",
@@ -47,6 +56,17 @@ export function createSplitView(options) {
   let isSplit = false;
   let activeCardIndex = -1;
   let currentGeo = rowGeometry(window.innerWidth, window.innerHeight);
+
+  // Player & Dock State
+  let activePlayer = null;
+  let currentJourney = null;
+  let currentStepIndex = 0;
+  let currentSpeed = CONFIG.defaultSpeed || 1;
+  let selectedLayerTab = "screen";
+  let dockMode = "flowList"; // "flowList" | "playing" | "flowEnd"
+  let isTryingYourself = false;
+  let tryBanner = null;
+  let activeTypingCancel = null;
 
   // ---------------------------------------------------------------- 1. Flat Mode DOM
   const flatContainer = document.createElement("div");
@@ -154,6 +174,7 @@ export function createSplitView(options) {
 
   const cards = [];
   const cardPorts = [];
+  const cardFooters = [];
   const layerArts = {};
 
   LAYERS.forEach((layer, idx) => {
@@ -245,13 +266,14 @@ export function createSplitView(options) {
     lastStep.className = "card-last-step";
     lastStep.textContent = t("card.last", { title: "Ready" });
     cardFooter.appendChild(lastStep);
+    cardFooters.push(lastStep);
 
     const viewCodeLink = document.createElement("button");
     viewCodeLink.type = "button";
     viewCodeLink.className = "card-view-code-link";
     viewCodeLink.textContent = t("card.viewCode");
     viewCodeLink.addEventListener("click", () => {
-      // Open dock tab in Phase 3
+      selectLayerTab(layer.id);
     });
     cardFooter.appendChild(viewCodeLink);
 
@@ -343,80 +365,11 @@ export function createSplitView(options) {
 
   splitContainer.appendChild(busArea);
 
-  // Dock (Laptop)
+  // ---------------------------------------------------------------- THE DOCK (LAPTOP)
   const dock = document.createElement("aside");
   dock.className = "split-dock";
 
-  const dockFlowList = document.createElement("div");
-  dockFlowList.className = "dock-flow-list-mode";
-
-  const flowsContainer = document.createElement("div");
-  flowsContainer.className = "dock-flows-container";
-
-  (journeys || []).forEach((j) => {
-    const flowCard = document.createElement("div");
-    flowCard.className = "dock-flow-card";
-
-    const top = document.createElement("div");
-    top.className = "dock-flow-card-top";
-
-    const titleRow = document.createElement("div");
-    titleRow.className = "dock-flow-title-row";
-
-    const title = document.createElement("h4");
-    title.className = "dock-flow-title";
-    title.textContent = j.title;
-    titleRow.appendChild(title);
-
-    top.appendChild(titleRow);
-
-    const hint = document.createElement("p");
-    hint.className = "dock-flow-hint";
-    hint.textContent = j.tryThis;
-    top.appendChild(hint);
-
-    flowCard.appendChild(top);
-
-    const btnGroup = document.createElement("div");
-    btnGroup.className = "dock-flow-btn-group";
-
-    const tryBtn = document.createElement("button");
-    tryBtn.type = "button";
-    tryBtn.className = "dock-flow-btn-try";
-    tryBtn.textContent = t("panel.tryIt");
-    tryBtn.addEventListener("click", () => {
-      // Try it yourself trigger (Section 6G)
-    });
-
-    const doitBtn = document.createElement("button");
-    doitBtn.type = "button";
-    doitBtn.className = "dock-flow-btn-doit";
-    doitBtn.textContent = t("panel.doIt");
-    doitBtn.addEventListener("click", () => {
-      if (typeof onDoItForMe === "function") {
-        onDoItForMe(j.id);
-      }
-    });
-
-    btnGroup.appendChild(tryBtn);
-    btnGroup.appendChild(doitBtn);
-    flowCard.appendChild(btnGroup);
-
-    flowsContainer.appendChild(flowCard);
-  });
-
-  dockFlowList.appendChild(flowsContainer);
-
-  const togetherBtn = document.createElement("button");
-  togetherBtn.type = "button";
-  togetherBtn.className = "dock-together-btn";
-  togetherBtn.textContent = t("stage.together");
-  togetherBtn.addEventListener("click", () => assemble());
-  dockFlowList.appendChild(togetherBtn);
-
-  dock.appendChild(dockFlowList);
   splitContainer.appendChild(dock);
-
   root.appendChild(splitContainer);
 
   // ---------------------------------------------------------------- 3. Geometry & Layout
@@ -425,8 +378,10 @@ export function createSplitView(options) {
 
     if (geo.compact) {
       groupsRow.classList.add("compact");
+      dock.classList.add("compact");
     } else {
       groupsRow.classList.remove("compact");
+      dock.classList.remove("compact");
     }
 
     cardRow.style.width = `${geo.rowWidth}px`;
@@ -470,14 +425,17 @@ export function createSplitView(options) {
 
     // Update bus line and stubs
     updateBusGeometry();
+
+    // Redraw styling wireframe targets if needed
+    if (layerArts.styling) layerArts.styling.redraw();
   }
 
   function getPortPositions() {
     const busRect = busArea.getBoundingClientRect();
     return cards.map((c) => {
       const rect = c.getBoundingClientRect();
-      const x = (rect.left + rect.width / 2) - busRect.left;
-      const y = (rect.bottom) - busRect.top;
+      const x = rect.left + rect.width / 2 - busRect.left;
+      const y = rect.bottom - busRect.top;
       return { x, y };
     });
   }
@@ -509,6 +467,7 @@ export function createSplitView(options) {
   function split() {
     if (isSplit) return;
     isSplit = true;
+    if (typeof window !== "undefined") window.__isExplaining = true;
 
     const reduced = prefersReducedMotion();
 
@@ -518,6 +477,7 @@ export function createSplitView(options) {
       const screenContainer = cards[0].querySelector(".screen-phone-container");
       screenContainer.appendChild(phoneObj.frameElement);
       applyGeometry(currentGeo);
+      setDockMode("flowList");
       return;
     }
 
@@ -538,8 +498,8 @@ export function createSplitView(options) {
       const targetScreenRect = cards[0].getBoundingClientRect();
 
       // Invert phone
-      const phoneDx = (flatRect.left + flatRect.width / 2) - (targetScreenRect.left + targetScreenRect.width / 2);
-      const phoneDy = (flatRect.top + flatRect.height / 2) - (targetScreenRect.top + targetScreenRect.height / 2);
+      const phoneDx = flatRect.left + flatRect.width / 2 - (targetScreenRect.left + targetScreenRect.width / 2);
+      const phoneDy = flatRect.top + flatRect.height / 2 - (targetScreenRect.top + targetScreenRect.height / 2);
       const initialFlatScale = flatPhoneScale(window.innerWidth, window.innerHeight, "laptop");
       const scaleRatio = initialFlatScale / currentGeo.phoneScale;
 
@@ -553,8 +513,8 @@ export function createSplitView(options) {
       }
       for (let i = 1; i < cards.length; i++) {
         const cardRect = otherRects[i - 1];
-        const cardDx = (flatRect.left + flatRect.width / 2) - (cardRect.left + cardRect.width / 2);
-        const cardDy = (flatRect.top + flatRect.height / 2) - (cardRect.top + cardRect.height / 2);
+        const cardDx = flatRect.left + flatRect.width / 2 - (cardRect.left + cardRect.width / 2);
+        const cardDy = flatRect.top + flatRect.height / 2 - (cardRect.top + cardRect.height / 2);
         cards[i].style.transform = `translate3d(${cardDx}px, ${cardDy}px, 0) scale(0.2)`;
         cards[i].style.opacity = "0";
       }
@@ -589,6 +549,7 @@ export function createSplitView(options) {
       // Step 5: Dock rises from bottom (300 ms)
       dock.style.transition = "transform 300ms var(--ease-out) 550ms";
       dock.style.transform = "none";
+      setDockMode("flowList");
 
       // Step 6: Intro glow: each card's header glows in turn, Screen to Database, 250 ms apart
       setTimeout(() => {
@@ -611,7 +572,11 @@ export function createSplitView(options) {
   // ---------------------------------------------------------------- 5. Assembly Animation
   function assemble() {
     if (!isSplit) return;
+    if (activePlayer) activePlayer.close();
+    cancelTryItYourself();
+
     isSplit = false;
+    if (typeof window !== "undefined") window.__isExplaining = false;
     setActiveCard(-1);
 
     const reduced = prefersReducedMotion();
@@ -634,8 +599,8 @@ export function createSplitView(options) {
 
     const flatRect = flatPhoneWrap.getBoundingClientRect();
     const targetScreenRect = cards[0].getBoundingClientRect();
-    const phoneDx = (flatRect.left + flatRect.width / 2) - (targetScreenRect.left + targetScreenRect.width / 2);
-    const phoneDy = (flatRect.top + flatRect.height / 2) - (targetScreenRect.top + targetScreenRect.height / 2);
+    const phoneDx = flatRect.left + flatRect.width / 2 - (targetScreenRect.left + targetScreenRect.width / 2);
+    const phoneDy = flatRect.top + flatRect.height / 2 - (targetScreenRect.top + targetScreenRect.height / 2);
 
     phoneObj.frameElement.style.transition = "transform 600ms var(--ease-out)";
     phoneObj.frameElement.style.transform = `translate3d(${phoneDx}px, ${phoneDy}px, 0)`;
@@ -694,7 +659,10 @@ export function createSplitView(options) {
     }
 
     const ports = getPortPositions();
-    if (!ports.length) return;
+    if (!ports.length) {
+      if (typeof onArrival === "function") onArrival();
+      return;
+    }
 
     const fromPort = ports[fromIndex] || ports[0];
     const toPort = ports[toIndex] || ports[0];
@@ -787,7 +755,7 @@ export function createSplitView(options) {
       // Port pulse ring (400 ms)
       if (cardPorts[toIndex]) {
         cardPorts[toIndex].classList.add("pulse");
-        setTimeout(() => cardPorts[toIndex].classList.remove("pulse"), 400);
+        setTimeout(() => cardPorts[toIndex]?.classList.remove("pulse"), 400);
       }
 
       setActiveCard(toIndex);
@@ -795,8 +763,767 @@ export function createSplitView(options) {
     }, durationMs);
   }
 
+  // ---------------------------------------------------------------- 7. DOCK MODES (SECTION 8)
+  function setDockMode(mode) {
+    dockMode = mode;
+    dock.replaceChildren();
+
+    if (mode === "flowList") {
+      renderFlowListMode();
+    } else if (mode === "playing") {
+      renderPlayingMode();
+    } else if (mode === "flowEnd") {
+      renderFlowEndMode();
+    }
+  }
+
+  // 7A. Flow List Mode
+  function renderFlowListMode() {
+    const listWrap = document.createElement("div");
+    listWrap.className = "dock-flow-list-mode";
+
+    const flowsContainer = document.createElement("div");
+    flowsContainer.className = "dock-flows-container";
+
+    (journeys || []).forEach((j) => {
+      const flowCard = document.createElement("div");
+      flowCard.className = "dock-flow-card";
+
+      const top = document.createElement("div");
+      top.className = "dock-flow-card-top";
+
+      const titleRow = document.createElement("div");
+      titleRow.className = "dock-flow-title-row";
+
+      const title = document.createElement("h4");
+      title.className = "dock-flow-title";
+      title.textContent = j.title;
+      titleRow.appendChild(title);
+
+      if (isFlowWatched(j.id)) {
+        const watchedBadge = document.createElement("span");
+        watchedBadge.className = "dock-flow-watched-badge";
+        watchedBadge.textContent = "✓ Watched";
+        titleRow.appendChild(watchedBadge);
+      }
+
+      top.appendChild(titleRow);
+
+      const hint = document.createElement("p");
+      hint.className = "dock-flow-hint";
+      hint.textContent = j.tryThis;
+      top.appendChild(hint);
+
+      flowCard.appendChild(top);
+
+      const btnGroup = document.createElement("div");
+      btnGroup.className = "dock-flow-btn-group";
+
+      const tryBtn = document.createElement("button");
+      tryBtn.type = "button";
+      tryBtn.className = "dock-flow-btn-try";
+      tryBtn.textContent = t("panel.tryIt");
+      tryBtn.addEventListener("click", () => startTryItYourself(j.id));
+
+      const doitBtn = document.createElement("button");
+      doitBtn.type = "button";
+      doitBtn.className = "dock-flow-btn-doit";
+      doitBtn.textContent = t("panel.doIt");
+      doitBtn.addEventListener("click", () => {
+        if (!isSplit) split();
+        if (typeof onDoItForMe === "function") onDoItForMe(j.id);
+      });
+
+      btnGroup.appendChild(tryBtn);
+      btnGroup.appendChild(doitBtn);
+      flowCard.appendChild(btnGroup);
+
+      flowsContainer.appendChild(flowCard);
+    });
+
+    listWrap.appendChild(flowsContainer);
+
+    const togetherBtn = document.createElement("button");
+    togetherBtn.type = "button";
+    togetherBtn.className = "dock-together-btn";
+    togetherBtn.textContent = t("stage.together");
+    togetherBtn.addEventListener("click", () => assemble());
+    listWrap.appendChild(togetherBtn);
+
+    dock.appendChild(listWrap);
+  }
+
+  // 7B. Playing Mode (Three Columns)
+  function renderPlayingMode() {
+    if (!activePlayer || !currentJourney) return;
+    const step = activePlayer.currentStep;
+    if (!step) return;
+
+    dock.replaceChildren();
+
+    const playingWrap = document.createElement("div");
+    playingWrap.className = "dock-playing-mode";
+
+    // ---------------- COLUMN 1: STEP INFO (280px)
+    const colStep = document.createElement("div");
+    colStep.className = "dock-col-step";
+
+    const stepTop = document.createElement("div");
+    stepTop.className = "dock-step-top";
+
+    // Progress bar
+    const progressBar = document.createElement("div");
+    progressBar.className = "dock-progress-bar";
+    activePlayer.steps.forEach((st, idx) => {
+      const seg = document.createElement("div");
+      seg.className = `dock-progress-seg ${idx === currentStepIndex ? "active" : ""} ${idx < currentStepIndex ? "done" : ""}`;
+      seg.style.backgroundColor = `var(--layer-${st.layer})`;
+      progressBar.appendChild(seg);
+    });
+    stepTop.appendChild(progressBar);
+
+    // Step meta
+    const stepMeta = document.createElement("div");
+    stepMeta.className = "dock-step-meta";
+
+    const layerChip = document.createElement("span");
+    layerChip.className = "dock-layer-chip";
+    layerChip.style.backgroundColor = `var(--layer-${step.layer})`;
+    layerChip.textContent = step.layer;
+    stepMeta.appendChild(layerChip);
+
+    const stepCount = document.createElement("span");
+    stepCount.className = "dock-step-count";
+    stepCount.textContent = t("panel.step", { n: currentStepIndex + 1, total: activePlayer.steps.length });
+    stepMeta.appendChild(stepCount);
+
+    stepTop.appendChild(stepMeta);
+
+    const stepTitle = document.createElement("h3");
+    stepTitle.className = "dock-step-title";
+    stepTitle.textContent = step.title;
+    stepTop.appendChild(stepTitle);
+
+    colStep.appendChild(stepTop);
+
+    const stepSay = document.createElement("p");
+    stepSay.className = "dock-step-say";
+    stepSay.textContent = step.say;
+    colStep.appendChild(stepSay);
+
+    playingWrap.appendChild(colStep);
+
+    // ---------------- COLUMN 2: CODE TABS & VIEWER (flex 1)
+    const colCode = document.createElement("div");
+    colCode.className = "dock-col-code";
+
+    // Layer Tabs
+    const tabsRow = document.createElement("div");
+    tabsRow.className = "dock-code-tabs";
+
+    // Calculate latest steps per layer
+    const codeMap = latestCodeByLayer(activePlayer.steps, LAYERS, currentStepIndex);
+
+    LAYERS.forEach((l) => {
+      const hasCode = codeMap[l.id] !== null;
+      const tabBtn = document.createElement("button");
+      tabBtn.type = "button";
+      tabBtn.className = `dock-code-tab ${l.id === selectedLayerTab ? "active" : ""} ${!hasCode ? "disabled" : ""}`;
+      tabBtn.style.setProperty("--tab-color", `var(--layer-${l.id})`);
+      tabBtn.title = !hasCode ? t("panel.notReached") : l.name;
+
+      const dot = document.createElement("span");
+      dot.className = "dock-tab-dot";
+      dot.style.backgroundColor = `var(--layer-${l.id})`;
+      tabBtn.appendChild(dot);
+
+      const tabLabel = document.createElement("span");
+      tabLabel.textContent = l.name;
+      tabBtn.appendChild(tabLabel);
+
+      tabBtn.addEventListener("click", () => {
+        if (hasCode) {
+          selectLayerTab(l.id);
+        }
+      });
+
+      tabsRow.appendChild(tabBtn);
+    });
+
+    colCode.appendChild(tabsRow);
+
+    // Active layer's code display
+    const activeCodeStep = codeMap[selectedLayerTab] || step;
+
+    const editorHeader = document.createElement("div");
+    editorHeader.className = "dock-code-editor-header";
+
+    const fileInfo = document.createElement("div");
+    fileInfo.className = "dock-code-file-info";
+
+    const filePath = document.createElement("span");
+    filePath.className = "dock-code-filepath";
+    filePath.textContent = activeCodeStep?.code?.file || "public/index.html";
+    fileInfo.appendChild(filePath);
+
+    const langChip = document.createElement("span");
+    langChip.className = "dock-code-lang";
+    langChip.textContent = activeCodeStep?.code?.lang || "text";
+    fileInfo.appendChild(langChip);
+
+    editorHeader.appendChild(fileInfo);
+
+    const copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.className = "dock-code-copy-btn";
+    copyBtn.innerHTML = `${getIconSvg("copy", 14)} <span>${t("panel.copy")}</span>`;
+    copyBtn.addEventListener("click", () => {
+      const fullCode = (activeCodeStep?.code?.lines || []).join("\n");
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(fullCode).catch(() => {});
+      }
+      copyBtn.querySelector("span").textContent = t("panel.copied");
+      setTimeout(() => {
+        copyBtn.querySelector("span").textContent = t("panel.copy");
+      }, 1500);
+    });
+
+    editorHeader.appendChild(copyBtn);
+    colCode.appendChild(editorHeader);
+
+    // Code lines content area
+    const codeArea = document.createElement("div");
+    codeArea.className = "dock-code-content-area";
+
+    renderAnimatedCode(codeArea, activeCodeStep?.code);
+    colCode.appendChild(codeArea);
+
+    playingWrap.appendChild(colCode);
+
+    // ---------------- COLUMN 3: PACKET DATA & CONTROLS (260px)
+    const colControls = document.createElement("div");
+    colControls.className = "dock-col-controls";
+
+    const packetBox = document.createElement("div");
+    packetBox.className = "dock-packet-box";
+
+    const packetHead = document.createElement("div");
+    packetHead.className = "dock-packet-header";
+
+    const packetTitle = document.createElement("span");
+    packetTitle.className = "dock-packet-title";
+    packetTitle.textContent = t("panel.packet");
+
+    const packetTag = document.createElement("span");
+    packetTag.className = "dock-packet-tag";
+    packetTag.textContent = step.packet?.label || "data";
+
+    packetHead.appendChild(packetTitle);
+    packetHead.appendChild(packetTag);
+    packetBox.appendChild(packetHead);
+
+    const jsonPre = document.createElement("pre");
+    jsonPre.className = "dock-packet-json";
+    jsonPre.textContent = JSON.stringify(step.packet?.data || {}, null, 2);
+    packetBox.appendChild(jsonPre);
+
+    colControls.appendChild(packetBox);
+
+    // Controls group
+    const controlsGroup = document.createElement("div");
+    controlsGroup.className = "dock-controls-group";
+
+    const row1 = document.createElement("div");
+    row1.className = "dock-controls-row";
+
+    const backBtn = document.createElement("button");
+    backBtn.type = "button";
+    backBtn.className = "dock-ctrl-btn";
+    backBtn.disabled = currentStepIndex === 0;
+    backBtn.innerHTML = `${getIconSvg("back", 16)} <span>Back</span>`;
+    backBtn.addEventListener("click", () => activePlayer.prev());
+
+    const playPauseBtn = document.createElement("button");
+    playPauseBtn.type = "button";
+    playPauseBtn.className = "dock-ctrl-btn dock-play-btn";
+    const isPlaying = activePlayer.isPlaying;
+    playPauseBtn.innerHTML = `${getIconSvg(isPlaying ? "pause" : "play", 16)} <span>${isPlaying ? t("panel.pause") : t("panel.play")}</span>`;
+    playPauseBtn.addEventListener("click", () => {
+      if (activePlayer.isPlaying) activePlayer.pause();
+      else activePlayer.play();
+      updatePlayPauseButton(playPauseBtn);
+    });
+
+    const nextBtn = document.createElement("button");
+    nextBtn.type = "button";
+    nextBtn.className = "dock-ctrl-btn";
+    nextBtn.disabled = currentStepIndex === activePlayer.steps.length - 1;
+    nextBtn.innerHTML = `<span>Next</span> ${getIconSvg("next", 16)}`;
+    nextBtn.addEventListener("click", () => activePlayer.next());
+
+    row1.appendChild(backBtn);
+    row1.appendChild(playPauseBtn);
+    row1.appendChild(nextBtn);
+    controlsGroup.appendChild(row1);
+
+    const row2 = document.createElement("div");
+    row2.className = "dock-controls-row";
+
+    // Speed segmented control
+    const speedSegmented = document.createElement("div");
+    speedSegmented.className = "dock-speed-segmented";
+    [0.5, 1, 2].forEach((sp) => {
+      const spBtn = document.createElement("button");
+      spBtn.type = "button";
+      spBtn.className = `dock-speed-btn ${sp === currentSpeed ? "active" : ""}`;
+      spBtn.textContent = `${sp}x`;
+      spBtn.addEventListener("click", () => {
+        currentSpeed = sp;
+        activePlayer.setSpeed(sp);
+        speedSegmented.querySelectorAll(".dock-speed-btn").forEach((b) => b.classList.remove("active"));
+        spBtn.classList.add("active");
+      });
+      speedSegmented.appendChild(spBtn);
+    });
+    row2.appendChild(speedSegmented);
+
+    const replayBtn = document.createElement("button");
+    replayBtn.type = "button";
+    replayBtn.className = "dock-ctrl-btn";
+    replayBtn.innerHTML = `${getIconSvg("replay", 16)} <span>Replay</span>`;
+    replayBtn.addEventListener("click", () => activePlayer.replay());
+    row2.appendChild(replayBtn);
+
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "dock-ctrl-btn";
+    closeBtn.innerHTML = `${getIconSvg("close", 16)} <span>Close</span>`;
+    closeBtn.addEventListener("click", () => {
+      activePlayer.close();
+      setDockMode("flowList");
+    });
+    row2.appendChild(closeBtn);
+
+    controlsGroup.appendChild(row2);
+    colControls.appendChild(controlsGroup);
+
+    playingWrap.appendChild(colControls);
+    dock.appendChild(playingWrap);
+  }
+
+  function updatePlayPauseButton(btn) {
+    if (!btn || !activePlayer) return;
+    const isPlaying = activePlayer.isPlaying;
+    btn.innerHTML = `${getIconSvg(isPlaying ? "pause" : "play", 16)} <span>${isPlaying ? t("panel.pause") : t("panel.play")}</span>`;
+  }
+
+  function selectLayerTab(layerId) {
+    selectedLayerTab = layerId;
+    if (dockMode === "playing") {
+      renderPlayingMode();
+    }
+  }
+
+  /**
+   * Renders code with typing animation capped at 900 ms, or immediately if reduced motion.
+   */
+  function renderAnimatedCode(container, codeData) {
+    if (activeTypingCancel) {
+      activeTypingCancel();
+      activeTypingCancel = null;
+    }
+    container.replaceChildren();
+
+    const { lang = "text", lines = [] } = codeData || {};
+    const pre = document.createElement("pre");
+
+    const totalChars = lines.join("\n").length;
+    const isReduced = prefersReducedMotion();
+
+    if (isReduced || totalChars === 0) {
+      lines.forEach((lineText, idx) => {
+        const lineEl = document.createElement("div");
+        lineEl.className = "dock-code-line";
+
+        const numEl = document.createElement("span");
+        numEl.className = "dock-code-linenum";
+        numEl.textContent = String(idx + 1);
+
+        const textEl = document.createElement("span");
+        textEl.className = "dock-code-linetext";
+
+        const tokens = tokenizeLine(lineText, lang);
+        tokens.forEach((tok) => {
+          const span = document.createElement("span");
+          if (tok.type !== "plain") span.className = `tok-${tok.type}`;
+          span.textContent = tok.text;
+          textEl.appendChild(span);
+        });
+
+        lineEl.appendChild(numEl);
+        lineEl.appendChild(textEl);
+        pre.appendChild(lineEl);
+      });
+      container.appendChild(pre);
+      return;
+    }
+
+    // Typing animation at ~12ms per char, never more than 900ms per step (Section 8B)
+    const typingDuration = Math.min(900, totalChars * 12);
+    const delayPerChar = totalChars > 0 ? typingDuration / totalChars : 0;
+
+    const tokenSpans = [];
+
+    lines.forEach((lineText, idx) => {
+      const lineEl = document.createElement("div");
+      lineEl.className = "dock-code-line";
+
+      const numEl = document.createElement("span");
+      numEl.className = "dock-code-linenum";
+      numEl.textContent = String(idx + 1);
+
+      const textEl = document.createElement("span");
+      textEl.className = "dock-code-linetext";
+
+      const tokens = tokenizeLine(lineText, lang);
+      tokens.forEach((tok) => {
+        const span = document.createElement("span");
+        if (tok.type !== "plain") span.className = `tok-${tok.type}`;
+        textEl.appendChild(span);
+        tokenSpans.push({ element: span, text: tok.text, offset: 0 });
+      });
+
+      lineEl.appendChild(numEl);
+      lineEl.appendChild(textEl);
+      pre.appendChild(lineEl);
+    });
+
+    container.appendChild(pre);
+
+    let cancelled = false;
+    let spanIdx = 0;
+    let timerId = null;
+
+    function typeNext() {
+      if (cancelled) return;
+      if (spanIdx >= tokenSpans.length) return;
+
+      const cur = tokenSpans[spanIdx];
+      cur.offset++;
+      cur.element.textContent = cur.text.slice(0, cur.offset);
+
+      if (cur.offset >= cur.text.length) {
+        spanIdx++;
+      }
+      timerId = setTimeout(typeNext, delayPerChar);
+    }
+
+    typeNext();
+
+    activeTypingCancel = () => {
+      cancelled = true;
+      if (timerId) clearTimeout(timerId);
+      tokenSpans.forEach((s) => {
+        s.element.textContent = s.text;
+      });
+    };
+  }
+
+  // 7C. Flow End Mode
+  function renderFlowEndMode() {
+    if (!currentJourney) return;
+
+    dock.replaceChildren();
+
+    const endWrap = document.createElement("div");
+    endWrap.className = "dock-flow-end-mode";
+
+    // Column 1: Lesson
+    const colLesson = document.createElement("div");
+    colLesson.className = "dock-end-col-lesson";
+
+    const lessonTitle = document.createElement("h4");
+    lessonTitle.className = "dock-lesson-title";
+    lessonTitle.textContent = t("flow.end.title");
+    colLesson.appendChild(lessonTitle);
+
+    const lessonBody = document.createElement("p");
+    lessonBody.className = "dock-lesson-body";
+    lessonBody.textContent = currentJourney.lesson;
+    colLesson.appendChild(lessonBody);
+
+    endWrap.appendChild(colLesson);
+
+    // Column 2: CTA
+    const colCta = document.createElement("div");
+    colCta.className = "dock-end-col-cta";
+
+    const ctaTitle = document.createElement("h3");
+    ctaTitle.className = "dock-cta-title";
+    ctaTitle.textContent = t("cta.title");
+    colCta.appendChild(ctaTitle);
+
+    const ctaBody = document.createElement("p");
+    ctaBody.className = "dock-cta-body";
+    ctaBody.textContent = t("cta.body", { program: CONFIG.program.name });
+    colCta.appendChild(ctaBody);
+
+    const ctaBtns = document.createElement("div");
+    ctaBtns.className = "dock-cta-buttons";
+
+    const watched = getWatchedFlows();
+    const waLink = getWhatsAppLink(watched);
+
+    if (waLink) {
+      const waBtn = document.createElement("a");
+      waBtn.href = waLink;
+      waBtn.target = "_blank";
+      waBtn.rel = "noopener noreferrer";
+      waBtn.className = "dock-whatsapp-btn";
+      waBtn.textContent = t("cta.whatsapp");
+      waBtn.addEventListener("click", () => emit("cta_whatsapp", { flow: currentJourney.id }));
+      ctaBtns.appendChild(waBtn);
+    }
+
+    const progLink = document.createElement("a");
+    progLink.href = getProgramLink("dock");
+    progLink.target = "_blank";
+    progLink.rel = "noopener noreferrer";
+    progLink.className = "dock-program-link";
+    progLink.textContent = t("cta.program");
+    progLink.addEventListener("click", () => emit("cta_program", { flow: currentJourney.id }));
+    ctaBtns.appendChild(progLink);
+
+    colCta.appendChild(ctaBtns);
+    endWrap.appendChild(colCta);
+
+    // Column 3: Actions & Progress
+    const colActions = document.createElement("div");
+    colActions.className = "dock-end-col-actions";
+
+    const isAll = watched.length >= journeys.length;
+    const progText = document.createElement("p");
+    progText.className = "dock-progress-counter";
+    progText.textContent = isAll ? t("cta.all") : t("cta.progress", { n: watched.length, total: journeys.length });
+    colActions.appendChild(progText);
+
+    if (CONFIG.features.allCode) {
+      const allCodeBtn = document.createElement("button");
+      allCodeBtn.type = "button";
+      allCodeBtn.className = "dock-all-code-btn";
+      allCodeBtn.innerHTML = `${getIconSvg("copy", 16)} <span>${t("panel.allCode")}</span>`;
+      allCodeBtn.addEventListener("click", () => {
+        openAllCodeSheet({ journey: currentJourney, steps: activePlayer.steps });
+      });
+      colActions.appendChild(allCodeBtn);
+    }
+
+    const tryAnotherBtn = document.createElement("button");
+    tryAnotherBtn.type = "button";
+    tryAnotherBtn.className = "dock-try-another-btn";
+    tryAnotherBtn.textContent = t("cta.another");
+    tryAnotherBtn.addEventListener("click", () => setDockMode("flowList"));
+    colActions.appendChild(tryAnotherBtn);
+
+    const shareBtn = createShareButton({ className: "dock-ctrl-btn" });
+    colActions.appendChild(shareBtn);
+
+    endWrap.appendChild(colActions);
+    dock.appendChild(endWrap);
+  }
+
+  // ---------------------------------------------------------------- 8. TRY IT YOURSELF (SECTION 6G)
+  function startTryItYourself(journeyId) {
+    const j = journeys.find((item) => item.id === journeyId);
+    if (!j) return;
+
+    if (!isSplit) split();
+
+    isTryingYourself = true;
+    cardRow.classList.add("dimmed");
+
+    // Move phone to flat position at flatPhoneScale
+    const flatScale = flatPhoneScale(window.innerWidth, window.innerHeight, "laptop");
+    const scaleRatio = flatScale / currentGeo.phoneScale;
+
+    // Center of flat phone
+    const screenRect = cards[0].getBoundingClientRect();
+    const flatW = (window.innerWidth - 48);
+    const flatPhoneCenterX = window.innerWidth / 2 - 180;
+    const flatPhoneCenterY = window.innerHeight / 2;
+
+    const currentCenterX = screenRect.left + screenRect.width / 2;
+    const currentCenterY = screenRect.top + screenRect.height / 2;
+
+    const dx = flatPhoneCenterX - currentCenterX;
+    const dy = flatPhoneCenterY - currentCenterY;
+
+    phoneObj.frameElement.style.transition = "transform 600ms var(--ease-out)";
+    phoneObj.frameElement.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(${scaleRatio})`;
+
+    // Show floating banner above phone
+    if (tryBanner) tryBanner.remove();
+    tryBanner = document.createElement("div");
+    tryBanner.className = "try-yourself-banner";
+
+    const bannerText = document.createElement("span");
+    bannerText.className = "try-yourself-text";
+    bannerText.textContent = t("panel.yourTurn", { hint: j.tryThis });
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "try-yourself-cancel-btn";
+    cancelBtn.textContent = t("panel.cancel");
+    cancelBtn.addEventListener("click", () => cancelTryItYourself());
+
+    tryBanner.appendChild(bannerText);
+    tryBanner.appendChild(cancelBtn);
+    splitContainer.appendChild(tryBanner);
+  }
+
+  function cancelTryItYourself() {
+    if (!isTryingYourself) return;
+    isTryingYourself = false;
+
+    if (tryBanner) {
+      tryBanner.remove();
+      tryBanner = null;
+    }
+
+    cardRow.classList.remove("dimmed");
+    phoneObj.frameElement.style.transition = "transform 500ms var(--ease-out)";
+    phoneObj.frameElement.style.transform = "none";
+  }
+
+  // ---------------------------------------------------------------- 9. PLAYER FLOW EXECUTION
+  function startFlow(journeyId, values, commit) {
+    const journey = journeys.find((j) => j.id === journeyId);
+    if (!journey) return;
+
+    if (!isSplit) split();
+
+    // Cancel "Try it yourself" if active
+    if (isTryingYourself) {
+      cancelTryItYourself();
+    }
+
+    if (activePlayer) {
+      activePlayer.close();
+      activePlayer = null;
+    }
+
+    currentJourney = journey;
+    currentStepIndex = 0;
+    selectedLayerTab = "screen";
+
+    // Reset layers visual state
+    layerArts.database?.reset();
+    layerArts.server?.reset();
+    layerArts.logic?.updateState();
+    layerArts.styling?.redraw();
+    cardFooters.forEach((f) => (f.textContent = t("card.last", { title: "Ready" })));
+
+    activePlayer = createPlayer({
+      journey,
+      layers: LAYERS,
+      values,
+      speed: currentSpeed,
+      commit,
+      autoPlay: CONFIG.features.autoPlay,
+      onStep: (step, index) => {
+        currentStepIndex = index;
+        selectedLayerTab = step.layer;
+
+        const destIndex = layerIndex(LAYERS, step.layer);
+        const fromIndex = step.from !== null && step.from !== undefined ? step.from : destIndex;
+
+        // Travel packet on bus
+        travelPacket(
+          fromIndex,
+          destIndex,
+          step.packet?.label || "step",
+          step.packet?.data || {},
+          step.travel,
+          () => {
+            setActiveCard(destIndex);
+          }
+        );
+
+        // Update layer card contents
+        if (step.layer === "styling" && layerArts.styling) {
+          layerArts.styling.highlight(step.code?.lines?.[0]);
+        } else if (step.layer === "logic" && layerArts.logic) {
+          layerArts.logic.pulseNodes();
+        } else if (step.layer === "server" && layerArts.server) {
+          layerArts.server.highlightRoute(step.route);
+          if (step.log) layerArts.server.addLog(step.log);
+        } else if (step.layer === "database" && layerArts.database) {
+          if (step.db) layerArts.database.execute(step.db);
+        }
+
+        // Update card footer
+        if (cardFooters[destIndex]) {
+          cardFooters[destIndex].textContent = t("card.last", { title: step.title });
+        }
+
+        // Update dock playing mode
+        setDockMode("playing");
+      },
+      onComplete: (j) => {
+        markFlowWatched(j.id);
+        setActiveCard(-1);
+        emit("flow_complete", { flow: j.id });
+        setDockMode("flowEnd");
+      }
+    });
+
+    setDockMode("playing");
+    activePlayer.start();
+  }
+
+  // ---------------------------------------------------------------- 10. KEYBOARD & EVENT LISTENERS
+  function handleKeyDown(e) {
+    const tag = e.target ? e.target.tagName.toLowerCase() : "";
+    if (tag === "input" || tag === "textarea") return;
+
+    if (e.key === "Escape") {
+      if (isTryingYourself) {
+        e.preventDefault();
+        cancelTryItYourself();
+      } else if (activePlayer && activePlayer.isPlaying) {
+        e.preventDefault();
+        activePlayer.close();
+        setDockMode("flowList");
+      }
+    } else if (e.key === " ") {
+      if (activePlayer && !activePlayer.isEnded) {
+        e.preventDefault();
+        if (activePlayer.isPlaying) activePlayer.pause();
+        else activePlayer.play();
+      }
+    } else if (e.key === "ArrowLeft") {
+      if (activePlayer && !activePlayer.isEnded) {
+        e.preventDefault();
+        activePlayer.prev();
+      }
+    } else if (e.key === "ArrowRight") {
+      if (activePlayer && !activePlayer.isEnded) {
+        e.preventDefault();
+        activePlayer.next();
+      }
+    }
+  }
+
+  window.addEventListener("keydown", handleKeyDown);
+
+  // Subscribe to journey requests (from phone screen clicks or doItForMe)
+  const unsubRequest = on("journey:request", (req) => {
+    startFlow(req.journeyId, req.values, req.commit);
+  });
+
   // ---------------------------------------------------------------- Initial setup
   applyGeometry(currentGeo);
+  setDockMode("flowList");
 
   return {
     element: root,
@@ -805,10 +1532,20 @@ export function createSplitView(options) {
     get isSplit() { return isSplit; },
     setActiveCard,
     travelPacket,
+    startFlow,
+    startTryItYourself,
+    setDockMode,
+    get dockMode() { return dockMode; },
+    get activePlayer() { return activePlayer; },
     updateGeometry: (w, h) => applyGeometry(rowGeometry(w, h)),
     layerArts,
     cards,
     unmount() {
+      if (typeof window !== "undefined") delete window.__isExplaining;
+      window.removeEventListener("keydown", handleKeyDown);
+      unsubRequest();
+      if (activePlayer) activePlayer.close();
+      if (activeTypingCancel) activeTypingCancel();
       root.remove();
     }
   };
