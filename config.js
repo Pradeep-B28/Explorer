@@ -6,7 +6,7 @@ export const CONFIG = {
   version: "1.0.0",
 
   // The live address. Set in Phase 6 (deploy). Used for share links and link previews.
-  siteUrl: "",
+  siteUrl: "https://explorer-mu-nine.vercel.app",
 
   // Sales WhatsApp: digits only, country code first, 11 to 15 digits. Empty hides the WhatsApp button.
   salesWhatsApp: "917550077725",
