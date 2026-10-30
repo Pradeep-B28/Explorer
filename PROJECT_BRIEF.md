@@ -1,3 +1,5 @@
+> **v2.0.0: see UPGRADE_BRIEF.md. Where they differ, UPGRADE_BRIEF.md wins.**
+
 # Explorer: Project Brief
 
 Read this whole file before you write any code. Then read `content/SCHEMA.md`. Work in the phases in Section 11, and stop after each one with a Phase Report.
