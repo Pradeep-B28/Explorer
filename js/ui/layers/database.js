@@ -174,7 +174,13 @@ export function createDatabaseLayer(container) {
         const rowEl = tbody.querySelector(`tr[data-row-id="${keyId}"]`);
         if (rowEl) {
           rowEl.classList.add("db-highlight-row");
-          rowEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          const rowTop = rowEl.offsetTop;
+          const rowBottom = rowTop + rowEl.offsetHeight;
+          if (rowTop < tableContainer.scrollTop) {
+            tableContainer.scrollTop = rowTop;
+          } else if (rowBottom > tableContainer.scrollTop + tableContainer.clientHeight) {
+            tableContainer.scrollTop = rowBottom - tableContainer.clientHeight;
+          }
         }
       }
     } else if (act === "INSERT") {
@@ -193,7 +199,13 @@ export function createDatabaseLayer(container) {
       const newRow = newTbody ? newTbody.querySelector(`tr[data-row-id="${keyId}"]`) : null;
       if (newRow) {
         newRow.classList.add("db-insert-slide-flash");
-        newRow.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        const rowTop = newRow.offsetTop;
+        const rowBottom = rowTop + newRow.offsetHeight;
+        if (rowTop < tableContainer.scrollTop) {
+          tableContainer.scrollTop = rowTop;
+        } else if (rowBottom > tableContainer.scrollTop + tableContainer.clientHeight) {
+          tableContainer.scrollTop = rowBottom - tableContainer.clientHeight;
+        }
       }
     } else if (act === "UPDATE") {
       const target = ordersData.find((o) => o.id === keyId);

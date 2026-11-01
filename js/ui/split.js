@@ -410,6 +410,17 @@ export function createSplitView(options) {
   root.appendChild(phoneView.element);
 
   // ---------------------------------------------------------------- 3. Geometry & Layout
+
+  function resetLayoutScroll() {
+    if (typeof window !== "undefined") {
+      window.scrollTo(0, 0);
+      if (document.documentElement) document.documentElement.scrollLeft = 0;
+      if (document.body) document.body.scrollLeft = 0;
+    }
+    if (root) root.scrollLeft = 0;
+    if (splitContainer) splitContainer.scrollLeft = 0;
+  }
+
   function applyGeometry(geo) {
     currentGeo = geo;
 
@@ -450,6 +461,12 @@ export function createSplitView(options) {
     fullstackPill.style.width = "80px";
     backendBracket.style.width = `${backendWidth}px`;
 
+    // Bus area width
+    busArea.style.width = `${geo.rowWidth}px`;
+    busSvg.style.width = `${geo.rowWidth}px`;
+    busSvg.setAttribute("width", geo.rowWidth);
+    busSvg.setAttribute("height", 44);
+
     dock.style.height = `${geo.dockHeight}px`;
 
     // Scale phone inside Screen card or flat wrap
@@ -465,6 +482,7 @@ export function createSplitView(options) {
 
     // Redraw styling wireframe targets if needed
     if (layerArts.styling) layerArts.styling.redraw();
+    resetLayoutScroll();
   }
 
   function getPortPositions() {
@@ -484,6 +502,12 @@ export function createSplitView(options) {
     const busY = 24; // 24px below card bottoms
     const firstX = ports[0].x;
     const lastX = ports[4].x;
+
+    linearGrad.setAttribute("x1", firstX);
+    linearGrad.setAttribute("y1", busY);
+    linearGrad.setAttribute("x2", lastX);
+    linearGrad.setAttribute("y2", busY);
+    linearGrad.setAttribute("gradientUnits", "userSpaceOnUse");
 
     busLineBg.setAttribute("x1", firstX);
     busLineBg.setAttribute("y1", busY);
@@ -607,6 +631,7 @@ export function createSplitView(options) {
           cards[i].style.transform = "";
         }
         updateBusGeometry();
+        resetLayoutScroll();
       }, 850);
 
       // Step 6: Intro glow: each card's header glows in turn, Screen to Database, 250 ms apart
