@@ -472,7 +472,7 @@ export function createSplitView(options) {
     return cards.map((c) => {
       const rect = c.getBoundingClientRect();
       const x = rect.left + rect.width / 2 - busRect.left;
-      const y = rect.bottom - busRect.top;
+      const y = 0;
       return { x, y };
     });
   }
@@ -509,6 +509,7 @@ export function createSplitView(options) {
     if (layoutFor(window.innerWidth, window.innerHeight) === "phone") {
       flatContainer.style.display = "none";
       splitContainer.style.display = "none";
+      splitContainer.classList.add("hidden");
       phoneView.element.style.display = "flex";
       phoneView.playSplitAnimation();
       return;
@@ -518,6 +519,7 @@ export function createSplitView(options) {
 
     if (reduced) {
       flatContainer.style.display = "none";
+      splitContainer.style.display = "flex";
       splitContainer.classList.remove("hidden");
       const screenContainer = cards[0].querySelector(".screen-phone-container");
       screenContainer.appendChild(phoneObj.frameElement);
@@ -531,9 +533,11 @@ export function createSplitView(options) {
 
     // Step 2 & 3: Measure flat phone & prepare FLIP
     const flatRect = phoneObj.frameElement.getBoundingClientRect();
+    const initialFlatScale = flatPhoneScale(window.innerWidth, window.innerHeight, "laptop");
 
     setTimeout(() => {
       flatContainer.style.display = "none";
+      splitContainer.style.display = "flex";
       splitContainer.classList.remove("hidden");
 
       const screenContainer = cards[0].querySelector(".screen-phone-container");
@@ -541,15 +545,12 @@ export function createSplitView(options) {
       applyGeometry(currentGeo);
 
       const targetScreenRect = cards[0].getBoundingClientRect();
+      const phoneDx = (flatRect.left + flatRect.width / 2) - (targetScreenRect.left + targetScreenRect.width / 2);
+      const phoneDy = (flatRect.top + flatRect.height / 2) - (targetScreenRect.top + targetScreenRect.height / 2);
 
-      // Invert phone
-      const phoneDx = flatRect.left + flatRect.width / 2 - (targetScreenRect.left + targetScreenRect.width / 2);
-      const phoneDy = flatRect.top + flatRect.height / 2 - (targetScreenRect.top + targetScreenRect.height / 2);
-      const initialFlatScale = flatPhoneScale(window.innerWidth, window.innerHeight, "laptop");
-      const scaleRatio = initialFlatScale / currentGeo.phoneScale;
-
-      phoneObj.frameElement.style.transform = `translate3d(${phoneDx}px, ${phoneDy}px, 0) scale(${scaleRatio})`;
-      phoneObj.frameElement.style.transformOrigin = "center center";
+      phoneObj.frameElement.style.transition = "none";
+      phoneObj.frameElement.style.transformOrigin = "top center";
+      phoneObj.frameElement.style.transform = `translate3d(${phoneDx}px, ${phoneDy}px, 0) scale(${initialFlatScale})`;
 
       // Invert other 4 cards: batch read rects first, then write transforms
       const otherRects = [];
@@ -558,8 +559,9 @@ export function createSplitView(options) {
       }
       for (let i = 1; i < cards.length; i++) {
         const cardRect = otherRects[i - 1];
-        const cardDx = flatRect.left + flatRect.width / 2 - (cardRect.left + cardRect.width / 2);
-        const cardDy = flatRect.top + flatRect.height / 2 - (cardRect.top + cardRect.height / 2);
+        const cardDx = (flatRect.left + flatRect.width / 2) - (cardRect.left + cardRect.width / 2);
+        const cardDy = (flatRect.top + flatRect.height / 2) - (cardRect.top + cardRect.height / 2);
+        cards[i].style.transition = "none";
         cards[i].style.transform = `translate3d(${cardDx}px, ${cardDy}px, 0) scale(0.2)`;
         cards[i].style.opacity = "0";
       }
@@ -574,7 +576,7 @@ export function createSplitView(options) {
 
       // Play phone flight into Screen card place (700 ms, --ease-out)
       phoneObj.frameElement.style.transition = "transform 700ms var(--ease-out)";
-      phoneObj.frameElement.style.transform = "none";
+      phoneObj.frameElement.style.transform = `translate3d(0, 0, 0) scale(${currentGeo.phoneScale})`;
 
       // Play other 4 cards slide out (70 ms apart via CSS transition-delay)
       for (let i = 1; i < cards.length; i++) {
@@ -595,6 +597,17 @@ export function createSplitView(options) {
       dock.style.transition = "transform 300ms var(--ease-out) 550ms";
       dock.style.transform = "none";
       setDockMode("flowList");
+
+      // Cleanup FLIP inline styles when transitions finish (850ms)
+      setTimeout(() => {
+        phoneObj.frameElement.style.transition = "";
+        phoneObj.setScale(currentGeo.phoneScale);
+        for (let i = 1; i < cards.length; i++) {
+          cards[i].style.transition = "";
+          cards[i].style.transform = "";
+        }
+        updateBusGeometry();
+      }, 850);
 
       // Step 6: Intro glow: each card's header glows in turn, Screen to Database, 250 ms apart
       setTimeout(() => {
@@ -632,6 +645,7 @@ export function createSplitView(options) {
     const reduced = prefersReducedMotion();
     if (reduced) {
       splitContainer.classList.add("hidden");
+      splitContainer.style.display = "none";
       flatContainer.style.display = "flex";
       flatPhoneWrap.appendChild(phoneObj.frameElement);
       flatIntroPanel.style.opacity = "1";
@@ -649,11 +663,12 @@ export function createSplitView(options) {
 
     const flatRect = flatPhoneWrap.getBoundingClientRect();
     const targetScreenRect = cards[0].getBoundingClientRect();
-    const phoneDx = flatRect.left + flatRect.width / 2 - (targetScreenRect.left + targetScreenRect.width / 2);
-    const phoneDy = flatRect.top + flatRect.height / 2 - (targetScreenRect.top + targetScreenRect.height / 2);
+    const phoneDx = (flatRect.left + flatRect.width / 2) - (targetScreenRect.left + targetScreenRect.width / 2);
+    const phoneDy = (flatRect.top + flatRect.height / 2) - (targetScreenRect.top + targetScreenRect.height / 2);
+    const flatScale = flatPhoneScale(window.innerWidth, window.innerHeight, "laptop");
 
     phoneObj.frameElement.style.transition = "transform 600ms var(--ease-out)";
-    phoneObj.frameElement.style.transform = `translate3d(${phoneDx}px, ${phoneDy}px, 0)`;
+    phoneObj.frameElement.style.transform = `translate3d(${phoneDx}px, ${phoneDy}px, 0) scale(${flatScale})`;
 
     for (let i = 1; i < cards.length; i++) {
       cards[i].style.transition = "transform 500ms var(--ease), opacity 400ms ease";
@@ -663,13 +678,14 @@ export function createSplitView(options) {
 
     setTimeout(() => {
       splitContainer.classList.add("hidden");
+      splitContainer.style.display = "none";
       flatContainer.style.display = "flex";
       flatPhoneWrap.appendChild(phoneObj.frameElement);
-      phoneObj.frameElement.style.transform = "none";
+      phoneObj.setScale(flatScale);
       phoneObj.frameElement.style.transition = "";
 
       for (let i = 1; i < cards.length; i++) {
-        cards[i].style.transform = "none";
+        cards[i].style.transform = "";
         cards[i].style.opacity = "1";
         cards[i].style.transition = "";
       }
@@ -853,7 +869,7 @@ export function createSplitView(options) {
       if (isFlowWatched(j.id)) {
         const watchedBadge = document.createElement("span");
         watchedBadge.className = "dock-flow-watched-badge";
-        watchedBadge.textContent = "✓ Watched";
+        watchedBadge.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span>Watched</span>';
         titleRow.appendChild(watchedBadge);
       }
 
@@ -1595,6 +1611,7 @@ export function createSplitView(options) {
     if (layout === "phone") {
       flatContainer.style.display = "none";
       splitContainer.style.display = "none";
+      splitContainer.classList.add("hidden");
       phoneView.element.style.display = "flex";
       phoneView.updateGeometry(w, h);
     } else {
@@ -1602,6 +1619,7 @@ export function createSplitView(options) {
       if (isSplit) {
         flatContainer.style.display = "none";
         splitContainer.style.display = "flex";
+        splitContainer.classList.remove("hidden");
         if (cards[0] && !cards[0].contains(phoneObj.frameElement)) {
           cards[0].querySelector(".screen-phone-container")?.appendChild(phoneObj.frameElement);
         }
@@ -1619,6 +1637,7 @@ export function createSplitView(options) {
         }
       } else {
         splitContainer.style.display = "none";
+        splitContainer.classList.add("hidden");
         flatContainer.style.display = "flex";
         if (!flatPhoneWrap.contains(phoneObj.frameElement)) {
           flatPhoneWrap.appendChild(phoneObj.frameElement);
