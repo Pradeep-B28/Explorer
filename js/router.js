@@ -1,8 +1,9 @@
 // Hash router handling navigation between #/ and #/app/<id>.
 // Uses window.location.hash and window.addEventListener.
-// Used by main.js.
+// Used by main.js and stage.js.
 
 const listeners = new Set();
+let currentRouteKey = null;
 
 /**
  * Parses the current hash into a route and parameter object.
@@ -34,12 +35,33 @@ export function getRoute() {
 }
 
 /**
- * Navigates to a specific hash route.
- * @param {string} hash Target hash, e.g. "#/app/Foodzy"
+ * Dispatches the current route to all registered listeners if the route changed.
+ */
+function handleHashChange() {
+  const current = getRoute();
+  const routeKey = `${current.route}:${JSON.stringify(current.params)}`;
+  if (routeKey === currentRouteKey) return;
+  currentRouteKey = routeKey;
+
+  for (const fn of Array.from(listeners)) {
+    try {
+      fn(current);
+    } catch (e) {
+      // Ignore listener errors
+    }
+  }
+}
+
+/**
+ * Navigates to a specific hash route and triggers route listeners.
+ * @param {string} hash Target hash, e.g. "#/" or "#/app/foodzy"
  */
 export function navigateTo(hash) {
   if (typeof window !== "undefined") {
-    window.location.hash = hash;
+    if (window.location.hash !== hash) {
+      window.location.hash = hash;
+    }
+    handleHashChange();
   }
 }
 
@@ -51,17 +73,6 @@ export function navigateTo(hash) {
 export function onRoute(fn) {
   listeners.add(fn);
   return () => listeners.delete(fn);
-}
-
-function handleHashChange() {
-  const current = getRoute();
-  for (const fn of Array.from(listeners)) {
-    try {
-      fn(current);
-    } catch (e) {
-      // Ignore listener errors
-    }
-  }
 }
 
 /**

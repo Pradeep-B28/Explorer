@@ -193,9 +193,11 @@
 }
 
 .stage-header {
+  position: relative;
+  z-index: 120;
   height: 64px;
   background: var(--surface);
-  opacity: 0.92;
+  opacity: 0.96;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
@@ -221,6 +223,11 @@
   color: var(--text);
   font-weight: 800;
   font-size: 1.125rem;
+  cursor: pointer;
+  padding: 6px 4px;
+  border-radius: var(--radius-sm, 6px);
+  position: relative;
+  z-index: 121;
 }
 
 .stage-back-link {
@@ -231,6 +238,18 @@
   font-weight: 700;
   color: var(--brand);
   text-decoration: none;
+  cursor: pointer;
+  padding: 8px 12px;
+  min-height: 40px;
+  border-radius: var(--radius-sm, 6px);
+  position: relative;
+  z-index: 121;
+  transition: background var(--dur-150, 150ms) var(--ease, ease), color var(--dur-150, 150ms) var(--ease, ease);
+}
+
+.stage-back-link:hover {
+  background: var(--surface-2, rgba(255, 255, 255, 0.05));
+  color: var(--brand-hover, var(--brand));
 }
 
 .stage-app-title {

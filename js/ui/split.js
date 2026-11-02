@@ -478,7 +478,7 @@ export function createSplitView(options) {
     if (!isSplit) {
       const flatScale = flatPhoneScale(window.innerWidth, window.innerHeight, "laptop");
       phoneObj.setScale(flatScale);
-    } else {
+    } else if (!isTryingYourself) {
       phoneObj.setScale(geo.phoneScale);
     }
 
@@ -1681,30 +1681,34 @@ export function createSplitView(options) {
 
     isTryingYourself = true;
     cardRow.classList.add("dimmed");
+    cardRow.classList.add("trying-yourself");
 
     // Move phone to flat position at flatPhoneScale
     const flatScale = flatPhoneScale(window.innerWidth, window.innerHeight, "laptop");
-    const scaleRatio = flatScale / currentGeo.phoneScale;
 
-    // Center of flat phone
-    const screenRect = cards[0].getBoundingClientRect();
-    const flatW = (window.innerWidth - 48);
-    const flatPhoneCenterX = window.innerWidth / 2 - 180;
-    const flatPhoneCenterY = window.innerHeight / 2;
+    // Measure current phone rect inside card 0
+    const phoneRect = phoneObj.frameElement.getBoundingClientRect();
 
-    const currentCenterX = screenRect.left + screenRect.width / 2;
-    const currentCenterY = screenRect.top + screenRect.height / 2;
+    // Center phone horizontally in viewport, vertically centered in stage area
+    const flatPhoneCenterX = window.innerWidth / 2;
+    const stageAvailableHeight = window.innerHeight - 64 - (currentGeo ? currentGeo.dockHeight : 140);
+    const targetTop = 64 + Math.max(20, (stageAvailableHeight - 808 * flatScale) / 2);
+
+    const currentCenterX = phoneRect.left + phoneRect.width / 2;
+    const currentTop = phoneRect.top;
 
     const dx = flatPhoneCenterX - currentCenterX;
-    const dy = flatPhoneCenterY - currentCenterY;
+    const dy = targetTop - currentTop;
 
     phoneObj.frameElement.style.transition = "transform 600ms var(--ease-out)";
-    phoneObj.frameElement.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(${scaleRatio})`;
+    phoneObj.frameElement.style.transformOrigin = "top center";
+    phoneObj.frameElement.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(${flatScale})`;
 
     // Show floating banner above phone
     if (tryBanner) tryBanner.remove();
     tryBanner = document.createElement("div");
     tryBanner.className = "try-yourself-banner";
+    tryBanner.style.top = `${Math.max(16, targetTop - 48)}px`;
 
     const bannerText = document.createElement("span");
     bannerText.className = "try-yourself-text";
@@ -1735,8 +1739,16 @@ export function createSplitView(options) {
     }
 
     cardRow.classList.remove("dimmed");
+    cardRow.classList.remove("trying-yourself");
+
     phoneObj.frameElement.style.transition = "transform 500ms var(--ease-out)";
-    phoneObj.frameElement.style.transform = "none";
+    phoneObj.frameElement.style.transformOrigin = "top center";
+    phoneObj.frameElement.style.transform = `translate3d(0, 0, 0) scale(${currentGeo.phoneScale})`;
+
+    setTimeout(() => {
+      phoneObj.frameElement.style.transition = "";
+      phoneObj.setScale(currentGeo.phoneScale);
+    }, 500);
   }
 
   // ---------------------------------------------------------------- 9. PLAYER FLOW EXECUTION
@@ -1937,6 +1949,9 @@ export function createSplitView(options) {
     cards,
     phoneView,
     unmount() {
+      if (isTryingYourself) {
+        cancelTryItYourself();
+      }
       if (typeof window !== "undefined") delete window.__isExplaining;
       window.removeEventListener("keydown", handleKeyDown);
       unsubRequest();

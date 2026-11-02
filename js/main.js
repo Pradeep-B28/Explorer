@@ -10,13 +10,18 @@ import { initAnalytics } from "./analytics.js";
 import { isDemoMode, initDemoMode, isPresenterMode, initPresenterMode } from "./demo.js";
 
 let currentScreenInstance = null;
+let isInitialized = false;
 
 function renderRoute({ route, params }) {
   const root = document.getElementById("app-root");
   if (!root) return;
 
   if (currentScreenInstance && typeof currentScreenInstance.unmount === "function") {
-    currentScreenInstance.unmount();
+    try {
+      currentScreenInstance.unmount();
+    } catch (e) {
+      console.warn("Screen unmount warning:", e);
+    }
     currentScreenInstance = null;
   }
 
@@ -34,11 +39,17 @@ function renderRoute({ route, params }) {
     if (siteHeader) siteHeader.removeAttribute("hidden");
     if (siteFooter) siteFooter.removeAttribute("hidden");
 
+    if (typeof window !== "undefined") {
+      window.scrollTo(0, 0);
+    }
     currentScreenInstance = mountHome(root);
   }
 }
 
 export function init() {
+  if (isInitialized) return;
+  isInitialized = true;
+
   if (shouldShowLoader()) {
     runLoader(document.body);
   }
@@ -64,9 +75,10 @@ export function init() {
 if (typeof window !== "undefined") {
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get("test") !== "1") {
-    window.addEventListener("DOMContentLoaded", init);
     if (document.readyState === "complete" || document.readyState === "interactive") {
       init();
+    } else {
+      window.addEventListener("DOMContentLoaded", init);
     }
   }
 }

@@ -1333,6 +1333,16 @@
   transition: opacity 300ms ease;
 }
 
+.split-card-row.trying-yourself .split-card.card-screen {
+  overflow: visible !important;
+  z-index: 100 !important;
+}
+
+.split-card-row.trying-yourself .screen-phone-container {
+  overflow: visible !important;
+  z-index: 100 !important;
+}
+
 .try-yourself-banner {
   position: absolute;
   top: 16px;
@@ -1346,7 +1356,7 @@
   box-shadow: 0 10px 25px -5px rgba(5, 150, 105, 0.35);
   border-radius: var(--radius-pill);
   padding: 8px 18px;
-  z-index: 40;
+  z-index: 150;
   animation: fadeInDown 300ms var(--ease-out);
 }
 

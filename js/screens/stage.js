@@ -11,6 +11,7 @@ import { createShareButton } from "../ui/share.js";
 import { ICONS, getIconSvg } from "../ui/icons.js";
 import { emit } from "../events.js";
 import { layoutFor } from "../engine/layout.js";
+import { navigateTo } from "../router.js";
 
 export function mount(container, { appId = "foodzy" }) {
   const root = document.createElement("div");
@@ -26,11 +27,20 @@ export function mount(container, { appId = "foodzy" }) {
   const headerLeft = document.createElement("div");
   headerLeft.className = "stage-header-left";
 
+  const handleGoHome = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    navigateTo("#/");
+  };
+
   const wordmark = document.createElement("a");
   wordmark.href = "#/";
   wordmark.className = "stage-wordmark";
   wordmark.setAttribute("aria-label", "Explorer Home");
   wordmark.innerHTML = `${ICONS.splitLayers} <span>Explorer</span>`;
+  wordmark.addEventListener("click", handleGoHome);
   headerLeft.appendChild(wordmark);
 
   const backLink = document.createElement("a");
@@ -38,6 +48,7 @@ export function mount(container, { appId = "foodzy" }) {
   backLink.className = "stage-back-link";
   backLink.innerHTML = `${getIconSvg("back", 16)} <span>${t("stage.back")}</span>`;
   backLink.setAttribute("aria-label", t("stage.back"));
+  backLink.addEventListener("click", handleGoHome);
   headerLeft.appendChild(backLink);
 
   const titleEl = document.createElement("span");
@@ -126,10 +137,18 @@ export function mount(container, { appId = "foodzy" }) {
       }
       window.removeEventListener("resize", handleResize);
       if (splitView && typeof splitView.unmount === "function") {
-        splitView.unmount();
+        try {
+          splitView.unmount();
+        } catch (e) {
+          console.warn("SplitView unmount warning:", e);
+        }
       }
       if (appInstance && typeof appInstance.unmount === "function") {
-        appInstance.unmount();
+        try {
+          appInstance.unmount();
+        } catch (e) {
+          console.warn("AppInstance unmount warning:", e);
+        }
       }
       root.remove();
     }
