@@ -869,16 +869,13 @@ export function createPhoneView(options) {
    * "Try it yourself" mode on phone.
    */
   function startTryItYourself(journey) {
+    if (!journey) return;
     isTryingYourself = true;
     tryText.textContent = t("panel.yourTurn", { hint: journey.tryThis });
     tryBanner.classList.remove("hidden");
 
     // Switch big card to live Screen layer
     selectLayer("screen", true);
-
-    if (typeof onTryItYourself === "function") {
-      onTryItYourself(journey);
-    }
   }
 
   function cancelTryItYourself() {

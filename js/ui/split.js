@@ -13,7 +13,7 @@ import { createLogicLayer } from "./layers/logic.js";
 import { createServerLayer } from "./layers/server.js";
 import { createDatabaseLayer } from "./layers/database.js";
 import { createPlayer } from "../player.js";
-import { latestCodeByLayer, layerIndex } from "../engine/journey.js";
+import { prepare, latestCodeByLayer, layerIndex } from "../engine/journey.js";
 import { isFlowWatched, markFlowWatched, getWatchedFlows } from "../progress.js";
 import { getWhatsAppLink, getProgramLink } from "../links.js";
 import { createShareButton } from "./share.js";
@@ -273,8 +273,11 @@ export function createSplitView(options) {
     viewCodeLink.type = "button";
     viewCodeLink.className = "card-view-code-link";
     viewCodeLink.textContent = t("card.viewCode");
-    viewCodeLink.addEventListener("click", () => {
+    viewCodeLink.setAttribute("aria-label", `${t("card.viewCode")}: ${layer.name}`);
+    viewCodeLink.addEventListener("click", (e) => {
+      e.stopPropagation();
       selectLayerTab(layer.id);
+      openLayerCodeModal(layer.id);
     });
     cardFooter.appendChild(viewCodeLink);
 
@@ -385,7 +388,9 @@ export function createSplitView(options) {
       }
     },
     onTryItYourself: (journey) => {
-      startTryItYourself(journey);
+      if (layoutFor(window.innerWidth, window.innerHeight) !== "phone") {
+        startTryItYourself(journey);
+      }
     },
     onPrev: () => {
       if (activePlayer && !activePlayer.isEnded) activePlayer.prev();
@@ -934,12 +939,16 @@ export function createSplitView(options) {
 
     listWrap.appendChild(flowsContainer);
 
+    const togetherWrap = document.createElement("div");
+    togetherWrap.className = "dock-together-wrap";
+
     const togetherBtn = document.createElement("button");
     togetherBtn.type = "button";
     togetherBtn.className = "dock-together-btn";
     togetherBtn.textContent = t("stage.together");
     togetherBtn.addEventListener("click", () => assemble());
-    listWrap.appendChild(togetherBtn);
+    togetherWrap.appendChild(togetherBtn);
+    listWrap.appendChild(togetherWrap);
 
     dock.appendChild(listWrap);
   }
@@ -1206,6 +1215,241 @@ export function createSplitView(options) {
     if (!btn || !activePlayer) return;
     const isPlaying = activePlayer.isPlaying;
     btn.innerHTML = `${getIconSvg(isPlaying ? "pause" : "play", 16)} <span>${isPlaying ? t("panel.pause") : t("panel.play")}</span>`;
+  }
+
+  /**
+   * Opens the centered Layer Code Modal (Actions 1 & 2).
+   * Displays tabs for Screen, Styling, Logic, Server, Database,
+   * syntax-highlighted code, file info bar with Copy, and action footer.
+   */
+  function openLayerCodeModal(initialLayerId) {
+    let activeLayerModalTab = initialLayerId || selectedLayerTab || "screen";
+
+    const scrim = document.createElement("div");
+    scrim.className = "layer-code-scrim";
+    scrim.setAttribute("role", "dialog");
+    scrim.setAttribute("aria-modal", "true");
+    scrim.setAttribute("aria-label", "Layer Code Viewer");
+
+    const modal = document.createElement("div");
+    modal.className = "layer-code-modal";
+
+    // 1. Header with layer tabs and close button
+    const modalHeader = document.createElement("header");
+    modalHeader.className = "layer-code-modal-header";
+
+    const tabsContainer = document.createElement("div");
+    tabsContainer.className = "layer-code-tabs";
+
+    // Steps source: if activePlayer is running, use its steps; otherwise prepare currentJourney or journeys[0]
+    const currentJ = currentJourney || journeys[0];
+    let journeySteps = activePlayer?.steps;
+    if (!journeySteps || !journeySteps.length) {
+      try {
+        const demoVals = currentJ.demoValues || {};
+        journeySteps = prepare(currentJ, demoVals, LAYERS);
+      } catch (e) {
+        journeySteps = currentJ.steps || [];
+      }
+    }
+
+    const currentStepIdx = activePlayer ? currentStepIndex : journeySteps.length - 1;
+    let codeMap = latestCodeByLayer(journeySteps, LAYERS, currentStepIdx);
+
+    // If initial layer is not reached in current flow, find another flow that includes it
+    if (!codeMap[activeLayerModalTab]) {
+      const altJ = (journeys || []).find((j) => (j.steps || []).some((s) => s.layer === activeLayerModalTab));
+      if (altJ) {
+        try {
+          const altSteps = prepare(altJ, altJ.demoValues || {}, LAYERS);
+          const altMap = latestCodeByLayer(altSteps, LAYERS, altSteps.length - 1);
+          if (altMap[activeLayerModalTab]) {
+            codeMap = { ...codeMap, [activeLayerModalTab]: altMap[activeLayerModalTab] };
+          }
+        } catch (e) {}
+      }
+    }
+
+    // Modal tabs
+    LAYERS.forEach((l) => {
+      const hasCode = Boolean(codeMap[l.id]);
+      const tabBtn = document.createElement("button");
+      tabBtn.type = "button";
+      tabBtn.className = `layer-code-tab ${l.id === activeLayerModalTab ? "active" : ""} ${!hasCode ? "disabled" : ""}`;
+      tabBtn.style.setProperty("--tab-color", `var(--layer-${l.id})`);
+      tabBtn.title = !hasCode ? t("panel.notReached") : l.name;
+
+      const dot = document.createElement("span");
+      dot.className = "layer-code-tab-dot";
+      dot.style.backgroundColor = `var(--layer-${l.id})`;
+      tabBtn.appendChild(dot);
+
+      const label = document.createElement("span");
+      label.textContent = l.name;
+      tabBtn.appendChild(label);
+
+      tabBtn.addEventListener("click", () => {
+        if (hasCode) {
+          activeLayerModalTab = l.id;
+          selectedLayerTab = l.id;
+          renderModalBody();
+        }
+      });
+      tabsContainer.appendChild(tabBtn);
+    });
+
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "layer-code-close-btn";
+    closeBtn.setAttribute("aria-label", t("panel.close") || "Close");
+    closeBtn.innerHTML = `${getIconSvg("close", 18)} <span>${t("panel.close") || "Close"}</span>`;
+    closeBtn.addEventListener("click", () => closeModal());
+
+    modalHeader.appendChild(tabsContainer);
+    modalHeader.appendChild(closeBtn);
+    modal.appendChild(modalHeader);
+
+    // 2. File info & copy bar
+    const fileBar = document.createElement("div");
+    fileBar.className = "layer-code-file-bar";
+
+    const fileInfo = document.createElement("div");
+    fileInfo.className = "layer-code-file-info";
+
+    const filePath = document.createElement("span");
+    filePath.className = "layer-code-filepath";
+
+    const langBadge = document.createElement("span");
+    langBadge.className = "layer-code-lang";
+
+    fileInfo.appendChild(filePath);
+    fileInfo.appendChild(langBadge);
+
+    const copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.className = "layer-code-copy-btn";
+    copyBtn.innerHTML = `${getIconSvg("copy", 16)} <span>${t("panel.copy")}</span>`;
+
+    fileBar.appendChild(fileInfo);
+    fileBar.appendChild(copyBtn);
+    modal.appendChild(fileBar);
+
+    // 3. Body: Code Area with line numbers and syntax highlighting
+    const bodyArea = document.createElement("div");
+    bodyArea.className = "layer-code-body-area";
+    modal.appendChild(bodyArea);
+
+    // 4. Action Footer
+    const footer = document.createElement("footer");
+    footer.className = "layer-code-modal-footer";
+
+    const footerCloseBtn = document.createElement("button");
+    footerCloseBtn.type = "button";
+    footerCloseBtn.className = "layer-code-footer-close-btn";
+    footerCloseBtn.textContent = t("panel.close") || "Close";
+    footerCloseBtn.addEventListener("click", () => closeModal());
+
+    const footerCopyBtn = document.createElement("button");
+    footerCopyBtn.type = "button";
+    footerCopyBtn.className = "layer-code-footer-copy-btn";
+    footerCopyBtn.innerHTML = `${getIconSvg("copy", 16)} <span>${t("panel.copy")}</span>`;
+
+    footer.appendChild(footerCloseBtn);
+    footer.appendChild(footerCopyBtn);
+    modal.appendChild(footer);
+
+    function renderModalBody() {
+      Array.from(tabsContainer.children).forEach((btn, idx) => {
+        const l = LAYERS[idx];
+        if (l.id === activeLayerModalTab) {
+          btn.classList.add("active");
+        } else {
+          btn.classList.remove("active");
+        }
+      });
+
+      const activeStep = codeMap[activeLayerModalTab];
+      const codeData = activeStep?.code || { file: "public/index.html", lang: "html", lines: [] };
+
+      filePath.textContent = codeData.file || "file";
+      langBadge.textContent = (codeData.lang || "text").toUpperCase();
+
+      const copyHandler = () => {
+        const full = (codeData.lines || []).join("\n");
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(full).catch(() => {});
+        }
+        copyBtn.querySelector("span").textContent = t("panel.copied");
+        footerCopyBtn.querySelector("span").textContent = t("panel.copied");
+        setTimeout(() => {
+          copyBtn.querySelector("span").textContent = t("panel.copy");
+          footerCopyBtn.querySelector("span").textContent = t("panel.copy");
+        }, 1500);
+      };
+
+      copyBtn.onclick = copyHandler;
+      footerCopyBtn.onclick = copyHandler;
+
+      bodyArea.replaceChildren();
+      const pre = document.createElement("pre");
+      pre.className = "layer-code-pre";
+
+      (codeData.lines || []).forEach((lineText, idx) => {
+        const lineEl = document.createElement("div");
+        lineEl.className = "layer-code-line";
+
+        const num = document.createElement("span");
+        num.className = "layer-code-linenum";
+        num.textContent = String(idx + 1);
+
+        const text = document.createElement("span");
+        text.className = "layer-code-linetext";
+
+        const tokens = tokenizeLine(lineText, codeData.lang || "text");
+        tokens.forEach((tok) => {
+          const span = document.createElement("span");
+          if (tok.type !== "plain") span.className = `tok-${tok.type}`;
+          span.textContent = tok.text;
+          text.appendChild(span);
+        });
+
+        lineEl.appendChild(num);
+        lineEl.appendChild(text);
+        pre.appendChild(lineEl);
+      });
+
+      bodyArea.appendChild(pre);
+    }
+
+    renderModalBody();
+
+    function closeModal() {
+      scrim.classList.add("closing");
+      setTimeout(() => {
+        window.removeEventListener("keydown", handleKeyDown);
+        scrim.remove();
+      }, 150);
+    }
+
+    function handleKeyDown(e) {
+      if (e.key === "Escape") {
+        closeModal();
+      }
+    }
+
+    scrim.addEventListener("click", (e) => {
+      if (e.target === scrim) {
+        closeModal();
+      }
+    });
+
+    window.addEventListener("keydown", handleKeyDown);
+    scrim.appendChild(modal);
+    document.body.appendChild(scrim);
+
+    requestAnimationFrame(() => {
+      closeBtn.focus();
+    });
   }
 
   function selectLayerTab(layerId) {

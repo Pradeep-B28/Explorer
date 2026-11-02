@@ -444,17 +444,7 @@ export function mount(container) {
   bandSection.appendChild(bandInner);
   root.appendChild(bandSection);
 
-  // 7. FOOTER
-  const footerSection = document.createElement("footer");
-  footerSection.className = "home-footer home-fade-up";
-  footerSection.innerHTML = `
-    <div class="home-footer-inner">
-      <p class="home-footer-line">${t("footer.line")}</p>
-      <p class="home-footer-disclaimer">${t("footer.disclaimer")}</p>
-      <p class="home-footer-legal">${t("footer.legal")}</p>
-    </div>
-  `;
-  root.appendChild(footerSection);
+  // 7. Footer is rendered once by site-footer in index.html to avoid duplicate sections (Issue 3)
 
   container.replaceChildren(root);
 

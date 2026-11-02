@@ -1,5 +1,5 @@
-// Foodzy tracking screen with live SVG route map, rider card, and status progression.
-// Uses map.js, toast.js, copy.js, trackingEta from js/engine/Foodzy/orders.js.
+// Foodzy tracking screen with live SVG route map, order lookup input, rider card, and status progression.
+// Uses map.js, toast.js, copy.js, trackingEta from js/engine/foodzy/orders.js.
 // Used by Foodzy app index.js.
 
 import { getAppContent } from "../../../content.js";
@@ -9,7 +9,7 @@ import { showToast } from "../../../ui/toast.js";
 import { createTrackingMap } from "../ui/map.js";
 import { navigate, getLastOrder } from "../state.js";
 
-const { app } = getAppContent("foodzy");
+const { app } = getAppContent("foodzy") || { app: { riderName: "Arun" } };
 
 const BACK_ARROW_SVG = `
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -29,9 +29,10 @@ export function mount(container, params = {}) {
   root.className = "foodzy-screen foodzy-track-screen";
 
   const lastOrder = getLastOrder();
-  const shopName = params.shopName || (lastOrder ? lastOrder.shopName : "Marina Biryani Co.");
-  const initialEta = params.eta || (lastOrder ? lastOrder.eta : 32);
-  const remainingMinutes = trackingEta(initialEta);
+  let currentOrderId = params.orderId || (lastOrder ? lastOrder.id : "FZ-52001");
+  let shopName = params.shopName || (lastOrder ? lastOrder.shopName : "Marina Biryani Co.");
+  let initialEta = params.eta || (lastOrder ? lastOrder.eta : 32);
+  let remainingMinutes = trackingEta(initialEta);
 
   // Top Nav
   const nav = document.createElement("nav");
@@ -52,6 +53,52 @@ export function mount(container, params = {}) {
   nav.appendChild(navTitle);
   root.appendChild(nav);
 
+  // Order Lookup Card (Action 4: working order-lookup inputs)
+  const lookupCard = document.createElement("div");
+  lookupCard.className = "track-lookup-card";
+
+  const lookupForm = document.createElement("form");
+  lookupForm.className = "track-lookup-form";
+  lookupForm.setAttribute("role", "search");
+  lookupForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const val = lookupInput.value.trim();
+    if (val) {
+      currentOrderId = val;
+      orderNumSpan.textContent = val;
+      showToast(`Tracking order ${val}`, root);
+    }
+  });
+
+  const lookupLabel = document.createElement("label");
+  lookupLabel.className = "track-lookup-label";
+  lookupLabel.htmlFor = "track-order-lookup-input";
+  lookupLabel.textContent = "Order Lookup";
+
+  const lookupInputRow = document.createElement("div");
+  lookupInputRow.className = "track-lookup-input-row";
+
+  const lookupInput = document.createElement("input");
+  lookupInput.id = "track-order-lookup-input";
+  lookupInput.type = "text";
+  lookupInput.className = "track-lookup-input";
+  lookupInput.value = currentOrderId;
+  lookupInput.placeholder = "Enter Order ID (e.g. FZ-52001)";
+  lookupInput.setAttribute("aria-label", "Order ID to track");
+
+  const lookupSubmitBtn = document.createElement("button");
+  lookupSubmitBtn.type = "submit";
+  lookupSubmitBtn.className = "track-lookup-submit-btn";
+  lookupSubmitBtn.textContent = "Track";
+
+  lookupInputRow.appendChild(lookupInput);
+  lookupInputRow.appendChild(lookupSubmitBtn);
+
+  lookupForm.appendChild(lookupLabel);
+  lookupForm.appendChild(lookupInputRow);
+  lookupCard.appendChild(lookupForm);
+  root.appendChild(lookupCard);
+
   // Map
   const mapObj = createTrackingMap({ shopName, progress: 0.65 });
   root.appendChild(mapObj.element);
@@ -60,17 +107,38 @@ export function mount(container, params = {}) {
   const statusCard = document.createElement("div");
   statusCard.className = "track-status-card";
 
+  // Order Info Header
+  const orderMetaRow = document.createElement("div");
+  orderMetaRow.className = "track-order-meta-row";
+
+  const orderIdLabel = document.createElement("span");
+  orderIdLabel.className = "track-order-id-label";
+  orderIdLabel.textContent = "Order ";
+
+  const orderNumSpan = document.createElement("strong");
+  orderNumSpan.className = "track-order-number";
+  orderNumSpan.textContent = currentOrderId;
+  orderIdLabel.appendChild(orderNumSpan);
+
+  const shopNameSpan = document.createElement("span");
+  shopNameSpan.className = "track-shop-name";
+  shopNameSpan.textContent = shopName;
+
+  orderMetaRow.appendChild(orderIdLabel);
+  orderMetaRow.appendChild(shopNameSpan);
+  statusCard.appendChild(orderMetaRow);
+
   // ETA Banner
   const etaRow = document.createElement("div");
   etaRow.className = "track-eta-row";
 
   const etaBadge = document.createElement("span");
   etaBadge.className = "track-eta-badge";
-  etaBadge.textContent = t("Foodzy.status.onTheWay");
+  etaBadge.textContent = t("foodzy.status.onTheWay");
 
   const etaTime = document.createElement("span");
   etaTime.className = "track-eta-time";
-  etaTime.textContent = t("Foodzy.minsAway", { n: remainingMinutes });
+  etaTime.textContent = t("foodzy.minsAway", { n: remainingMinutes });
 
   etaRow.appendChild(etaBadge);
   etaRow.appendChild(etaTime);
@@ -80,10 +148,10 @@ export function mount(container, params = {}) {
   const stepsList = document.createElement("ol");
   stepsList.className = "track-steps-bar";
   const stepLabels = [
-    { key: "Foodzy.status.placed", label: t("Foodzy.status.placed"), done: true },
-    { key: "Foodzy.status.preparing", label: t("Foodzy.status.preparing"), done: true },
-    { key: "Foodzy.status.onTheWay", label: t("Foodzy.status.onTheWay"), active: true },
-    { key: "Foodzy.status.delivered", label: t("Foodzy.status.delivered"), future: true }
+    { key: "foodzy.status.placed", label: t("foodzy.status.placed"), done: true },
+    { key: "foodzy.status.preparing", label: t("foodzy.status.preparing"), done: true },
+    { key: "foodzy.status.onTheWay", label: t("foodzy.status.onTheWay"), active: true },
+    { key: "foodzy.status.delivered", label: t("foodzy.status.delivered"), future: true }
   ];
 
   stepLabels.forEach((s) => {
@@ -120,7 +188,7 @@ export function mount(container, params = {}) {
 
   const riderMsg = document.createElement("h4");
   riderMsg.className = "track-rider-name";
-  riderMsg.textContent = t("Foodzy.riderOnWay", { name: app.riderName || "Arun" });
+  riderMsg.textContent = t("foodzy.riderOnWay", { name: app.riderName || "Arun" });
 
   const riderSub = document.createElement("p");
   riderSub.className = "track-rider-sub";
@@ -135,7 +203,7 @@ export function mount(container, params = {}) {
   callBtn.setAttribute("aria-label", "Call delivery partner demo");
   callBtn.innerHTML = CALL_ICON_SVG;
   callBtn.addEventListener("click", () => {
-    showToast(t("demo.toast"), root);
+    showToast(t("demo.toast") || "Demo action", root);
   });
 
   riderCard.appendChild(riderAvatar);
