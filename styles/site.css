@@ -48,7 +48,8 @@
 }
 
 .site-share-btn {
-  height: 40px;
+  height: 44px;
+  min-height: 44px;
   padding: 0 16px;
   display: inline-flex;
   align-items: center;
@@ -68,8 +69,10 @@
 }
 
 .site-theme-btn {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border);
   background: var(--surface);
@@ -92,7 +95,8 @@
   }
   .site-share-btn {
     padding: 0 10px;
-    min-width: 40px;
+    min-width: 44px;
+    height: 44px;
   }
   .site-share-btn span {
     display: none;

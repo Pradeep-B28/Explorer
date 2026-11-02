@@ -2895,8 +2895,9 @@
   }
   .stage-share-btn {
     padding: 0 8px !important;
-    height: 40px !important;
-    min-width: 40px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    min-width: 44px !important;
   }
   .stage-share-btn span {
     display: none !important;
