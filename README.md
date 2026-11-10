@@ -174,9 +174,6 @@ Explorer/
 ├── config.js               Central business configuration (WhatsApp, program, speeds, analytics)
 ├── manifest.json           PWA installable app manifest
 ├── og-image.png            Social media preview image (1200 x 630) showing split layers
-├── REEL_SCRIPT.md          Video recording scripts for social media (vertical & horizontal)
-├── UPGRADE_GUIDE.md        Architectural upgrade manual for new apps and flows
-├── STUDENT_EXPLAINER.md    Pedagogical guide for learners explaining full stack concepts
 ├── CHANGELOG.md            Semantic version changelog
 ├── assets/
 │   ├── favicon.png         Application favicon
